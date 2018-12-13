@@ -5,7 +5,6 @@
 #include <unordered_set>
 
 #include "source.h"
-#include "proc/synthetic-stream.h"
 #include <iomanip>
 
 #include "device.h"

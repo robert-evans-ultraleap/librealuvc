@@ -30,6 +30,11 @@
 #include "../third-party/easyloggingpp/src/easylogging++.h"
 #endif // BUILD_EASYLOGGINGPP
 
+enum rs2_recording_mode {
+  RS2_RECORDING_MODE_COUNT = 0,
+  RS2_RECORDING_MODE_OTHER = 1,
+};
+
 typedef unsigned char byte;
 
 const int RS2_USER_QUEUE_SIZE = 128;

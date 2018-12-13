@@ -8,13 +8,10 @@
 
 #include <array>
 #include <chrono>
-#include "l500/l500.h"
-#include "ivcam/sr300.h"
-#include "ds5/ds5-factory.h"
-#include "ds5/ds5-timestamp.h"
+#include <iomanip>
 #include "backend.h"
-#include "mock/recorder.h"
-#include <media/ros/ros_reader.h>
+#include "device.h"
+#include "sensor.h"
 #include "types.h"
 #include "stream.h"
 #include "environment.h"
@@ -117,6 +114,7 @@ namespace librealsense
             };
 #endif
             break;
+#if 0
         case backend_type::record:
             _backend = std::make_shared<platform::record_backend>(platform::create_backend(), filename, section, mode);
             break;
@@ -124,6 +122,7 @@ namespace librealsense
             _backend = std::make_shared<platform::playback_backend>(filename, section, min_api_version);
 
             break;
+#endif
         default: throw invalid_value_exception(to_string() << "Undefined backend type " << static_cast<int>(type));
         }
 
@@ -250,6 +249,7 @@ namespace librealsense
                         bool register_device_notifications)
             : device(ctx, group, register_device_notifications)
         {
+#if 0
             std::vector<std::shared_ptr<platform::uvc_device>> devs;
             for (auto&& info : uvc_infos)
                 devs.push_back(ctx->get_backend().create_uvc_device(info));
@@ -280,6 +280,7 @@ namespace librealsense
             color_ep->try_register_pu(RS2_OPTION_WHITE_BALANCE);
             color_ep->try_register_pu(RS2_OPTION_ENABLE_AUTO_EXPOSURE);
             color_ep->try_register_pu(RS2_OPTION_ENABLE_AUTO_WHITE_BALANCE);
+#endif
         }
 
         virtual rs2_intrinsics get_intrinsics(unsigned int subdevice, const stream_profile& profile) const
@@ -334,22 +335,6 @@ namespace librealsense
             std::copy(begin(tm2_devices), end(tm2_devices), std::back_inserter(list));
         }
 #endif
-
-        auto l500_devices = l500_info::pick_l500_devices(ctx, devices.uvc_devices, devices.usb_devices);
-        std::copy(begin(l500_devices), end(l500_devices), std::back_inserter(list));
-
-        if (mask & RS2_PRODUCT_LINE_D400)
-        {
-            auto ds5_devices = ds5_info::pick_ds5_devices(ctx, devices);
-            std::copy(begin(ds5_devices), end(ds5_devices), std::back_inserter(list));
-        }
-
-        if (mask & RS2_PRODUCT_LINE_SR300)
-        {
-            auto sr300_devices = sr300_info::pick_sr300_devices(ctx, devices.uvc_devices, devices.usb_devices);
-            std::copy(begin(sr300_devices), end(sr300_devices), std::back_inserter(list));
-        }
-
         auto recovery_devices = recovery_info::pick_recovery_devices(ctx, devices.usb_devices);
         std::copy(begin(recovery_devices), end(recovery_devices), std::back_inserter(list));
 
@@ -519,31 +504,13 @@ namespace librealsense
 
     std::shared_ptr<device_interface> context::add_device(const std::string& file)
     {
-        auto it = _playback_devices.find(file);
-        if (it != _playback_devices.end() && it->second.lock())
-        {
-            //Already exists
-            throw librealsense::invalid_value_exception(to_string() << "File \"" << file << "\" already loaded to context");
-        }
-        auto playback_dev = std::make_shared<playback_device>(shared_from_this(), std::make_shared<ros_reader>(file, shared_from_this()));
-        auto dinfo = std::make_shared<playback_device_info>(playback_dev);
-        auto prev_playback_devices = _playback_devices;
-        _playback_devices[file] = dinfo;
-        on_device_changed({}, {}, prev_playback_devices, _playback_devices);
-        return playback_dev;
+		assert(0);
+		return nullptr;
     }
 
     void context::remove_device(const std::string& file)
     {
-        auto it = _playback_devices.find(file);
-        if (!it->second.lock() || it == _playback_devices.end())
-        {
-            //Not found
-            return;
-        }
-        auto prev_playback_devices =_playback_devices;
-        _playback_devices.erase(it);
-        on_device_changed({},{}, prev_playback_devices, _playback_devices);
+		assert(0);
     }
 
     std::vector<std::vector<platform::uvc_device_info>> group_devices_by_unique_id(const std::vector<platform::uvc_device_info>& devices)

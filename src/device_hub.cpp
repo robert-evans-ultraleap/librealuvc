@@ -4,7 +4,6 @@
 #include <librealsense2/rs.hpp>
 #include "source.h"
 #include "core/processing.h"
-#include "proc/synthetic-stream.h"
 #include "device_hub.h"
 
 namespace librealsense

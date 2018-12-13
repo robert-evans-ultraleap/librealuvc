@@ -5,14 +5,12 @@
 
 #include "types.h"
 #include "backend.h"
-#include "mock/recorder.h"
 #include "core/streaming.h"
 #if WITH_TRACKING
     #include "tm2/tm-context.h"
 #endif
 
 #include <vector>
-#include <media/playback/playback_device.h>
 
 namespace librealsense
 {
@@ -78,7 +76,7 @@ namespace librealsense
         playback
     };
 
-
+#if 0
     class playback_device_info : public device_info
     {
         std::shared_ptr<playback_device> _dev;
@@ -103,6 +101,7 @@ namespace librealsense
             return _dev;
         }
     };
+#endif
 
     typedef std::vector<std::shared_ptr<device_info>> devices_info;
 
