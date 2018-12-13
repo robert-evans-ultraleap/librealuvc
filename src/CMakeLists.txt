@@ -19,6 +19,9 @@ if(BUILD_SHARED_LIBS)
     target_sources(${LRS_TARGET} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/realsense.def")
 endif()
 
+include_directories(${CMAKE_CURRENT_LIST_DIR}/../include)
+
+if(NOTDEF)
 target_sources(${LRS_TARGET}
     PRIVATE
         # "${CMAKE_CURRENT_LIST_DIR}/environment.cpp"
@@ -36,7 +39,7 @@ target_sources(${LRS_TARGET}
         # "${CMAKE_CURRENT_LIST_DIR}/image.cpp"
         # "${CMAKE_CURRENT_LIST_DIR}/image_avx.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/log.cpp"
-        # "${CMAKE_CURRENT_LIST_DIR}/rs.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/rs.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/types.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/backend.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/verify.c"
@@ -67,3 +70,38 @@ target_sources(${LRS_TARGET}
         "${CMAKE_CURRENT_LIST_DIR}/device.h"
         "${CMAKE_CURRENT_LIST_DIR}/api.h"
 )
+endif()
+
+add_executable(
+    mytest
+	    "${CMAKE_CURRENT_LIST_DIR}/mytest.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/environment.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/device_hub.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/archive.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/context.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/device.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/sensor.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/algo.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/sync.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/stream.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/option.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/error-handling.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/hw-monitor.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/image.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/image_avx.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/log.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/rs.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/types.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/backend.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/verify.c"
+        # "${CMAKE_CURRENT_LIST_DIR}/software-device.cpp"
+        # "${CMAKE_CURRENT_LIST_DIR}/source.cpp"
+		
+        "${CMAKE_CURRENT_LIST_DIR}/win/win-helpers.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/win/win-uvc.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/win/win-usb.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/win/win-hid.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/win/win-backend.cpp"
+		
+)
+

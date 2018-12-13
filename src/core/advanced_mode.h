@@ -3,6 +3,7 @@
 #pragma once
 
 #include "hw-monitor.h"
+#include "sensor.h"
 #include "streaming.h"
 #include "option.h"
 #define RS400_ADVANCED_MODE_HPP

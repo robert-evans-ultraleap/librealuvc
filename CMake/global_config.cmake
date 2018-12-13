@@ -9,6 +9,8 @@ include(CMake/lrs_macros.cmake)
 include(CMake/version_config.cmake)
 include(CMake/lrs_options.cmake)
 
+unset(BUILD_EASYLOGGINGPP)
+
 if(ENABLE_CCACHE)
   find_program(CCACHE_FOUND ccache)
   if(CCACHE_FOUND)
