@@ -5,7 +5,6 @@
 
 #include "backend.h"
 #include "core/options.h"
-#include "core/streaming.h"
 
 #include <chrono>
 #include <memory>
