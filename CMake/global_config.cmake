@@ -9,7 +9,7 @@ include(CMake/lrs_macros.cmake)
 include(CMake/version_config.cmake)
 include(CMake/lrs_options.cmake)
 
-unset(BUILD_EASYLOGGINGPP)
+set(BUILD_EASYLOGGINGPP OFF)
 
 if(ENABLE_CCACHE)
   find_program(CCACHE_FOUND ccache)
@@ -46,24 +46,16 @@ macro(global_set_flags)
       add_definitions(-DENFORCE_METADATA)
     endif()
 
-    if (BUILD_WITH_CUDA)
-        add_definitions(-DRS2_USE_CUDA)
-    endif()
-
     if(FORCE_LIBUVC)
         set(BACKEND RS2_USE_LIBUVC_BACKEND)
         message( WARNING "Using libuvc!" )
-    endif()
-
-    if (BUILD_WITH_CUDA)
-        include(CMake/cuda_config.cmake)
     endif()
 
     add_definitions(-D${BACKEND} -DUNICODE)
 endmacro()
 
 macro(global_target_config)
-    target_link_libraries(${LRS_TARGET} PRIVATE realsense-file ${CMAKE_THREAD_LIBS_INIT} ${TRACKING_DEVICE_LIBS})
+    target_link_libraries(${LRS_TARGET} PRIVATE ${CMAKE_THREAD_LIBS_INIT} ${TRACKING_DEVICE_LIBS})
 
     include_directories(${LRS_TARGET} src)
 
@@ -71,10 +63,10 @@ macro(global_target_config)
 
     target_include_directories(${LRS_TARGET}
         PRIVATE
-            ${ROSBAG_HEADER_DIRS}
-            ${BOOST_INCLUDE_PATH}
-            ${LZ4_INCLUDE_PATH}
-            ${LIBUSB_LOCAL_INCLUDE_PATH}
+            # ${ROSBAG_HEADER_DIRS}
+            # ${BOOST_INCLUDE_PATH}
+            # ${LZ4_INCLUDE_PATH}
+            # ${LIBUSB_LOCAL_INCLUDE_PATH}
         PUBLIC
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
             $<INSTALL_INTERFACE:include>
