@@ -27,14 +27,14 @@ int nframe;
 void on_frame(
   platform::stream_profile prof,
   platform::frame_object frame,
-  std::function<void()> func
+  std::function<void()> release_frame
 ) {
   ++nframe;
   if (1) {
     printf("DEBUG: nframe %d ...\n", nframe);
     fflush(stdout);
   }
-  func();
+  release_frame();
 }
 
 uint32_t str2fourcc(const char* s) {
