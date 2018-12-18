@@ -51,7 +51,7 @@
 #ifdef V4L2_META_FMT_UVC
 constexpr bool metadata_node = true;
 #else
-#pragma message ( "\nLibrealsense notification: V4L2_META_FMT_UVC was not defined, adding metadata constructs")
+#pragma message ( "\nlibrealuvc notification: V4L2_META_FMT_UVC was not defined, adding metadata constructs")
 
 constexpr bool metadata_node = false;
 
@@ -84,7 +84,7 @@ struct uvc_meta_buffer {
 #pragma pack(pop)
 
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {

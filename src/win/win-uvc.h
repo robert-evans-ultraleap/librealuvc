@@ -31,7 +31,7 @@ static const std::vector<std::vector<std::pair<GUID, GUID>>> attributes_params =
     },
 };
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {

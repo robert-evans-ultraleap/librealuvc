@@ -6,8 +6,8 @@
 // out of this file and into more appropriate locations.
 
 #pragma once
-#ifndef LIBREALSENSE_TYPES_H
-#define LIBREALSENSE_TYPES_H
+#ifndef LIBREALUVC_TYPES_H
+#define LIBREALUVC_TYPES_H
 
 #include "../include/librealsense2/hpp/rs_types.hpp"
 
@@ -50,7 +50,7 @@ const double DBL_EPSILON = 2.2204460492503131e-016;  // smallest such that 1.0+D
 #include "../common/android_helpers.h"
 #endif
 
-namespace librealsense
+namespace librealuvc
 {
     #define UNKNOWN_VALUE "UNKNOWN"
     const double TIMESTAMP_USEC_TO_MSEC = 0.001;
@@ -112,11 +112,11 @@ namespace librealsense
 
 #if BUILD_EASYLOGGINGPP
 
-#define LOG_DEBUG(...)   do { CLOG(DEBUG   ,"librealsense") << __VA_ARGS__; } while(false)
-#define LOG_INFO(...)    do { CLOG(INFO    ,"librealsense") << __VA_ARGS__; } while(false)
-#define LOG_WARNING(...) do { CLOG(WARNING ,"librealsense") << __VA_ARGS__; } while(false)
-#define LOG_ERROR(...)   do { CLOG(ERROR   ,"librealsense") << __VA_ARGS__; } while(false)
-#define LOG_FATAL(...)   do { CLOG(FATAL   ,"librealsense") << __VA_ARGS__; } while(false)
+#define LOG_DEBUG(...)   do { CLOG(DEBUG   ,"librealuvc") << __VA_ARGS__; } while(false)
+#define LOG_INFO(...)    do { CLOG(INFO    ,"librealuvc") << __VA_ARGS__; } while(false)
+#define LOG_WARNING(...) do { CLOG(WARNING ,"librealuvc") << __VA_ARGS__; } while(false)
+#define LOG_ERROR(...)   do { CLOG(ERROR   ,"librealuvc") << __VA_ARGS__; } while(false)
+#define LOG_FATAL(...)   do { CLOG(FATAL   ,"librealuvc") << __VA_ARGS__; } while(false)
 
 #else // BUILD_EASYLOGGINGPP
 
@@ -147,7 +147,7 @@ namespace librealsense
     //////////////////////////
 
 
-    class librealsense_exception : public std::exception
+    class librealuvc_exception : public std::exception
     {
     public:
         const char* get_message() const noexcept
@@ -166,7 +166,7 @@ namespace librealsense
         }
 
     protected:
-        librealsense_exception(const std::string& msg,
+        librealuvc_exception(const std::string& msg,
                                rs2_exception_type exception_type) noexcept
             : _msg(msg),
               _exception_type(exception_type)
@@ -177,19 +177,19 @@ namespace librealsense
         rs2_exception_type _exception_type;
     };
 
-    class recoverable_exception : public librealsense_exception
+    class recoverable_exception : public librealuvc_exception
     {
     public:
         recoverable_exception(const std::string& msg,
             rs2_exception_type exception_type) noexcept;
     };
 
-    class unrecoverable_exception : public librealsense_exception
+    class unrecoverable_exception : public librealuvc_exception
     {
     public:
         unrecoverable_exception(const std::string& msg,
                                 rs2_exception_type exception_type) noexcept
-            : librealsense_exception(msg, exception_type)
+            : librealuvc_exception(msg, exception_type)
         {
             LOG_ERROR(msg);
         }
@@ -1201,7 +1201,7 @@ namespace librealsense
         std::chrono::high_resolution_clock::time_point ended;
     };
 
-    typedef librealsense::small_heap<callback_invocation, 1> callbacks_heap;
+    typedef librealuvc::small_heap<callback_invocation, 1> callbacks_heap;
 
     struct callback_invocation_holder
     {
@@ -1326,7 +1326,7 @@ namespace librealsense
     uint32_t calc_crc32(const uint8_t *buf, size_t bufsize);
 
 
-    class polling_device_watcher: public librealsense::platform::device_watcher
+    class polling_device_watcher: public librealuvc::platform::device_watcher
     {
     public:
         polling_device_watcher(const platform::backend* backend_ref):
@@ -1581,9 +1581,9 @@ namespace librealsense
 namespace std {
 
     template <>
-    struct hash<librealsense::stream_profile>
+    struct hash<librealuvc::stream_profile>
     {
-        size_t operator()(const librealsense::stream_profile& k) const
+        size_t operator()(const librealuvc::stream_profile& k) const
         {
             using std::hash;
 
@@ -1596,9 +1596,9 @@ namespace std {
     };
 
     template <>
-    struct hash<librealsense::platform::stream_profile>
+    struct hash<librealuvc::platform::stream_profile>
     {
-        size_t operator()(const librealsense::platform::stream_profile& k) const
+        size_t operator()(const librealuvc::platform::stream_profile& k) const
         {
             using std::hash;
 
@@ -1610,15 +1610,15 @@ namespace std {
     };
 
     template <>
-    struct hash<librealsense::request_mapping>
+    struct hash<librealuvc::request_mapping>
     {
-        size_t operator()(const librealsense::request_mapping& k) const
+        size_t operator()(const librealuvc::request_mapping& k) const
         {
             using std::hash;
 
-            return (hash<librealsense::platform::stream_profile>()(k.profile))
-                ^ (hash<librealsense::pixel_format_unpacker*>()(k.unpacker))
-                ^ (hash<librealsense::native_pixel_format*>()(k.pf));
+            return (hash<librealuvc::platform::stream_profile>()(k.profile))
+                ^ (hash<librealuvc::pixel_format_unpacker*>()(k.unpacker))
+                ^ (hash<librealuvc::native_pixel_format*>()(k.pf));
         }
     };
 }

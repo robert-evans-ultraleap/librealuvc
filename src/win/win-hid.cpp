@@ -31,7 +31,7 @@
 
 const uint8_t HID_METADATA_SIZE = 8; // bytes
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {

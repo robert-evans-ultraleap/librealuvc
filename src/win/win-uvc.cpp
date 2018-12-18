@@ -10,10 +10,10 @@
 #include <ntverp.h>
 #if VER_PRODUCTBUILD <= 9600    // (WinSDK 8.1)
 #ifdef ENFORCE_METADATA
-#error( "Librealsense Error!: Featuring UVC Metadata requires WinSDK 10.0.10586.0. \
+#error( "librealuvc Error!: Featuring UVC Metadata requires WinSDK 10.0.10586.0. \
  Install the required toolset to proceed. Alternatively, uncheck ENFORCE_METADATA option in CMake GUI tool")
 #else
-#pragma message ( "\nLibrealsense notification: Featuring UVC Metadata requires WinSDK 10.0.10586.0 toolset. \
+#pragma message ( "\nlibrealuvc notification: Featuring UVC Metadata requires WinSDK 10.0.10586.0 toolset. \
 The library will be compiled without the metadata support!\n")
 #endif // ENFORCE_METADATA
 #else
@@ -48,7 +48,7 @@ The library will be compiled without the metadata support!\n")
 
 #define MAX_PINS 5
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {
@@ -358,13 +358,13 @@ namespace librealsense
 
                 auto pStruct = next_struct;
                 cfg.step.resize(option_range_size);
-                librealsense::copy(cfg.step.data(), pStruct, field_width);
+                librealuvc::copy(cfg.step.data(), pStruct, field_width);
                 pStruct += length;
                 cfg.min.resize(option_range_size);
-                librealsense::copy(cfg.min.data(), pStruct, field_width);
+                librealuvc::copy(cfg.min.data(), pStruct, field_width);
                 pStruct += length;
                 cfg.max.resize(option_range_size);
-                librealsense::copy(cfg.max.data(), pStruct, field_width);
+                librealuvc::copy(cfg.max.data(), pStruct, field_width);
                 return;
             }
             case KSPROPERTY_MEMBER_VALUES:
@@ -382,7 +382,7 @@ namespace librealsense
                     }
 
                     cfg.def.resize(option_range_size);
-                    librealsense::copy(cfg.def.data(), next_struct, field_width);
+                    librealuvc::copy(cfg.def.data(), next_struct, field_width);
                 }
                 return;
             }
@@ -761,7 +761,7 @@ namespace librealsense
 
             // This is temporary work-around for Windows 10 Red-Stone2 build
             // There seem to be issues re-creating Media Foundation objects frequently
-            // That's why until this is properly investigated on RS2 machines librealsense will keep MF objects alive
+            // That's why until this is properly investigated on RS2 machines librealuvc will keep MF objects alive
             // As a negative side-effect the camera will remain in D0 power state longer
             if (rs2)
             {

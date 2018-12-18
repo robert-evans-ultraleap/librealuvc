@@ -4,7 +4,7 @@
 #include "option.h"
 #include "types.h"
 
-namespace librealsense
+namespace librealuvc
 {
     class polling_error_handler
     {

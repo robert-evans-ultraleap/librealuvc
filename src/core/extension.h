@@ -17,7 +17,7 @@
         static constexpr const char* to_string() { return #T; }; \
     }
 
-namespace librealsense
+namespace librealuvc
 {
     class extendable_interface
     {

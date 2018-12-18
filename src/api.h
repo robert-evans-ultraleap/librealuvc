@@ -25,20 +25,20 @@ struct rs2_error
 
 struct rs2_notification
 {
-    rs2_notification(const librealsense::notification* notification)
+    rs2_notification(const librealuvc::notification* notification)
         :_notification(notification) {}
 
-    const librealsense::notification* _notification;
+    const librealuvc::notification* _notification;
 };
 
 struct rs2_device
 {
-    std::shared_ptr<librealsense::context> ctx;
-    std::shared_ptr<librealsense::device_info> info;
-    std::shared_ptr<librealsense::device_interface> device;
+    std::shared_ptr<librealuvc::context> ctx;
+    std::shared_ptr<librealuvc::device_info> info;
+    std::shared_ptr<librealuvc::device_interface> device;
 };
 
-namespace librealsense
+namespace librealuvc
 {
     // Facilities for streaming function arguments
 
@@ -110,7 +110,7 @@ namespace librealsense
     static void translate_exception(const char * name, std::string args, rs2_error ** error)
     {
         try { throw; }
-        catch (const librealsense_exception& e) { if (error) *error = new rs2_error{ e.what(), name, move(args), e.get_exception_type() }; }
+        catch (const librealuvc_exception& e) { if (error) *error = new rs2_error{ e.what(), name, move(args), e.get_exception_type() }; }
         catch (const std::exception& e) { if (error) *error = new rs2_error{ e.what(), name, move(args) }; }
         catch (...) { if (error) *error = new rs2_error{ "unknown error", name, move(args) }; }
     }
@@ -373,47 +373,47 @@ auto func = [&](){
 // In addition, error flag and function parameters are captured into the API logger
 #define NOEXCEPT_RETURN(R, ...) };\
 result_printer<decltype(fetch_return_type(func, &decltype(func)::operator()))> __p(&__api_logger);\
-__api_logger.set_params([&](){ std::ostringstream ss; librealsense::stream_args(ss, #__VA_ARGS__, __VA_ARGS__); return ss.str(); });\
+__api_logger.set_params([&](){ std::ostringstream ss; librealuvc::stream_args(ss, #__VA_ARGS__, __VA_ARGS__); return ss.str(); });\
 try {\
 return __p.invoke(func);\
 } catch(...) {\
-rs2_error* e; librealsense::translate_exception(__FUNCTION__, __api_logger.get_params(), &e);\
+rs2_error* e; librealuvc::translate_exception(__FUNCTION__, __api_logger.get_params(), &e);\
 LOG_WARNING(rs2_get_error_message(e)); rs2_free_error(e); __api_logger.report_error(); return R; } } }
 
 #define HANDLE_EXCEPTIONS_AND_RETURN(R, ...) };\
 result_printer<decltype(fetch_return_type(func, &decltype(func)::operator()))> __p(&__api_logger);\
-__api_logger.set_params([&](){ std::ostringstream ss; librealsense::stream_args(ss, #__VA_ARGS__, __VA_ARGS__); return ss.str(); });\
+__api_logger.set_params([&](){ std::ostringstream ss; librealuvc::stream_args(ss, #__VA_ARGS__, __VA_ARGS__); return ss.str(); });\
 try {\
 return __p.invoke(func);\
 } catch(...) {\
-librealsense::translate_exception(__FUNCTION__, __api_logger.get_params(), error); __api_logger.report_error(); return R; } } }
+librealuvc::translate_exception(__FUNCTION__, __api_logger.get_params(), error); __api_logger.report_error(); return R; } } }
 
 #define NOARGS_HANDLE_EXCEPTIONS_AND_RETURN(R, ...) };\
 result_printer<decltype(fetch_return_type(func, &decltype(func)::operator()))> __p(&__api_logger);\
 try {\
 return __p.invoke(func);\
-} catch(...) { librealsense::translate_exception(__FUNCTION__, "", error); __api_logger.report_error(); return R; } } }
+} catch(...) { librealuvc::translate_exception(__FUNCTION__, "", error); __api_logger.report_error(); return R; } } }
 
 #else // No API tracing:
 
 #define BEGIN_API_CALL try
-#define NOEXCEPT_RETURN(R, ...) catch(...) { std::ostringstream ss; librealsense::stream_args(ss, #__VA_ARGS__, __VA_ARGS__); rs2_error* e; librealsense::translate_exception(__FUNCTION__, ss.str(), &e); LOG_WARNING(rs2_get_error_message(e)); rs2_free_error(e); return R; }
-#define HANDLE_EXCEPTIONS_AND_RETURN(R, ...) catch(...) { std::ostringstream ss; librealsense::stream_args(ss, #__VA_ARGS__, __VA_ARGS__); librealsense::translate_exception(__FUNCTION__, ss.str(), error); return R; }
-#define NOARGS_HANDLE_EXCEPTIONS_AND_RETURN(R) catch(...) { librealsense::translate_exception(__FUNCTION__, "", error); return R; }
+#define NOEXCEPT_RETURN(R, ...) catch(...) { std::ostringstream ss; librealuvc::stream_args(ss, #__VA_ARGS__, __VA_ARGS__); rs2_error* e; librealuvc::translate_exception(__FUNCTION__, ss.str(), &e); LOG_WARNING(rs2_get_error_message(e)); rs2_free_error(e); return R; }
+#define HANDLE_EXCEPTIONS_AND_RETURN(R, ...) catch(...) { std::ostringstream ss; librealuvc::stream_args(ss, #__VA_ARGS__, __VA_ARGS__); librealuvc::translate_exception(__FUNCTION__, ss.str(), error); return R; }
+#define NOARGS_HANDLE_EXCEPTIONS_AND_RETURN(R) catch(...) { librealuvc::translate_exception(__FUNCTION__, "", error); return R; }
 
 #endif
 
 
     #define VALIDATE_NOT_NULL(ARG) if(!(ARG)) throw std::runtime_error("null pointer passed for argument \"" #ARG "\"");
-    #define VALIDATE_ENUM(ARG) if(!librealsense::is_valid(ARG)) { std::ostringstream ss; ss << "invalid enum value for argument \"" #ARG "\""; throw librealsense::invalid_value_exception(ss.str()); }
-    #define VALIDATE_RANGE(ARG, MIN, MAX) if((ARG) < (MIN) || (ARG) > (MAX)) { std::ostringstream ss; ss << "out of range value for argument \"" #ARG "\""; throw librealsense::invalid_value_exception(ss.str()); }
+    #define VALIDATE_ENUM(ARG) if(!librealuvc::is_valid(ARG)) { std::ostringstream ss; ss << "invalid enum value for argument \"" #ARG "\""; throw librealuvc::invalid_value_exception(ss.str()); }
+    #define VALIDATE_RANGE(ARG, MIN, MAX) if((ARG) < (MIN) || (ARG) > (MAX)) { std::ostringstream ss; ss << "out of range value for argument \"" #ARG "\""; throw librealuvc::invalid_value_exception(ss.str()); }
     #define VALIDATE_LE(ARG, MAX) if((ARG) > (MAX)) { std::ostringstream ss; ss << "out of range value for argument \"" #ARG "\""; throw std::runtime_error(ss.str()); }
     #define VALIDATE_INTERFACE_NO_THROW(X, T)                                                   \
     ([&]() -> T* {                                                                              \
         T* p = dynamic_cast<T*>(&(*X));                                                         \
         if (p == nullptr)                                                                       \
         {                                                                                       \
-            auto ext = dynamic_cast<librealsense::extendable_interface*>(&(*X));                \
+            auto ext = dynamic_cast<librealuvc::extendable_interface*>(&(*X));                \
             if (ext == nullptr) return nullptr;                                                 \
             else                                                                                \
             {                                                                                   \

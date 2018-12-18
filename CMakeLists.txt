@@ -1,6 +1,6 @@
 #  minimum required cmake version: 3.1.0
 cmake_minimum_required(VERSION 3.1.0)
-project(libuvcxx LANGUAGES CXX C)
+project(librealuvc LANGUAGES CXX C)
 
 # include librealsense general configuration
 include(CMake/global_config.cmake)

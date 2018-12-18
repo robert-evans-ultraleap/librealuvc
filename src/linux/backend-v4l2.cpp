@@ -100,7 +100,7 @@ int lockf(int fd, int cmd, off_t length)
 }
 #endif
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {
@@ -577,7 +577,7 @@ namespace librealsense
                     {
 #ifndef RS2_USE_CUDA
                        /* On the Jetson TX, the camera module is CSI & I2C and does not report as this code expects
-                       Patch suggested by JetsonHacks: https://github.com/jetsonhacks/buildLibrealsense2TX */
+                       Patch suggested by JetsonHacks: https://github.com/jetsonhacks/buildlibrealsense2TX */
                         LOG_INFO("Failed to read busnum/devnum. Device Path: " << path);
 #endif
                         continue;
@@ -864,7 +864,7 @@ namespace librealsense
         {
             uint32_t device_fourcc = id;
             char fourcc_buff[sizeof(device_fourcc)+1];
-            librealsense::copy(fourcc_buff, &device_fourcc, sizeof(device_fourcc));
+            librealuvc::copy(fourcc_buff, &device_fourcc, sizeof(device_fourcc));
             fourcc_buff[sizeof(device_fourcc)] = 0;
             return fourcc_buff;
         }
@@ -963,7 +963,7 @@ namespace librealsense
                                     std::stringstream s;
                                     s << "Incomplete video frame detected!\nSize " << buf.bytesused
                                       << " out of " << buffer->get_full_length() << " bytes (" << percentage << "%)";
-                                    librealsense::notification n = { RS2_NOTIFICATION_CATEGORY_FRAME_CORRUPTED, 0, RS2_LOG_SEVERITY_WARN, s.str()};
+                                    librealuvc::notification n = { RS2_NOTIFICATION_CATEGORY_FRAME_CORRUPTED, 0, RS2_LOG_SEVERITY_WARN, s.str()};
 
                                     _error_handler(n);
                                 }
@@ -1011,7 +1011,7 @@ namespace librealsense
                 else // (val==0)
                 {
                     LOG_WARNING("Frames didn't arrived within 5 seconds");
-                        librealsense::notification n = {RS2_NOTIFICATION_CATEGORY_FRAMES_TIMEOUT, 0, RS2_LOG_SEVERITY_WARN,  "Frames didn't arrived within 5 seconds"};
+                        librealuvc::notification n = {RS2_NOTIFICATION_CATEGORY_FRAMES_TIMEOUT, 0, RS2_LOG_SEVERITY_WARN,  "Frames didn't arrived within 5 seconds"};
 
                         _error_handler(n);
                 }
@@ -1334,7 +1334,7 @@ namespace librealsense
             {
                 LOG_ERROR(ex.what());
 
-                librealsense::notification n = {RS2_NOTIFICATION_CATEGORY_UNKNOWN_ERROR, 0, RS2_LOG_SEVERITY_ERROR, ex.what()};
+                librealuvc::notification n = {RS2_NOTIFICATION_CATEGORY_UNKNOWN_ERROR, 0, RS2_LOG_SEVERITY_ERROR, ex.what()};
 
                 _error_handler(n);
             }

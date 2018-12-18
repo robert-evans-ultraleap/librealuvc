@@ -7,7 +7,7 @@
 #include "extension.h"
 #include "types.h"
 
-namespace librealsense
+namespace librealuvc
 {
     struct option_range
     {
@@ -43,7 +43,7 @@ namespace librealsense
         virtual ~options_interface() = default;
     };
 
-    MAP_EXTENSION(RS2_EXTENSION_OPTIONS, librealsense::options_interface);
+    MAP_EXTENSION(RS2_EXTENSION_OPTIONS, librealuvc::options_interface);
 
     class options_container : public virtual options_interface, public extension_snapshot
     {

@@ -5,7 +5,7 @@
 
 #include "../backend.h"
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {

@@ -5,7 +5,7 @@
 #if BUILD_EASYLOGGINGPP
 INITIALIZE_EASYLOGGINGPP
 
-namespace librealsense
+namespace librealuvc
 {
     class logger_type
     {
@@ -19,7 +19,7 @@ namespace librealsense
         log_callback_ptr callback;
 
         std::string filename;
-        const std::string log_id = "librealsense";
+        const std::string log_id = "librealuvc";
 
     public:
         static el::Level severity_to_level(rs2_log_severity severity)
@@ -104,7 +104,7 @@ namespace librealsense
                 for (uint32_t i = 0; i < RS2_LOG_SEVERITY_COUNT; i++)
                 {
                     auto current = (rs2_log_severity)i;
-                    std::string name = librealsense::get_string(current);
+                    std::string name = librealuvc::get_string(current);
                     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
                     if (content_str == name)
                     {
@@ -138,23 +138,23 @@ namespace librealsense
     static logger_type logger;
 }
 
-void librealsense::log_to_console(rs2_log_severity min_severity)
+void librealuvc::log_to_console(rs2_log_severity min_severity)
 {
     logger.log_to_console(min_severity);
 }
 
-void librealsense::log_to_file(rs2_log_severity min_severity, const char * file_path)
+void librealuvc::log_to_file(rs2_log_severity min_severity, const char * file_path)
 {
     logger.log_to_file(min_severity, file_path);
 }
 
 #else // BUILD_EASYLOGGINGPP
 
-void librealsense::log_to_console(rs2_log_severity min_severity)
+void librealuvc::log_to_console(rs2_log_severity min_severity)
 {
 }
 
-void librealsense::log_to_file(rs2_log_severity min_severity, const char * file_path)
+void librealuvc::log_to_file(rs2_log_severity min_severity, const char * file_path)
 {
 }
 

@@ -8,7 +8,7 @@
 #include <Sensorsapi.h>
 #include <atlcomcli.h>
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {

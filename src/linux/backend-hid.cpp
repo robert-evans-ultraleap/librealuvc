@@ -54,7 +54,7 @@ const std::string IIO_DEVICE_PREFIX("iio:device");
 const std::string IIO_ROOT_PATH("/sys/bus/iio/devices");
 const std::string HID_CUSTOM_PATH("/sys/bus/platform/drivers/hid_sensor_custom");
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {
@@ -1115,7 +1115,7 @@ namespace librealsense
                     /* On the Jetson TX, ina3221x is the power monitor (I2C bus)
                     This code is checking the IIA device directory, but tries to compare as USB HID device
                     The ina3221x is not a HID device. Check here to avoid spamming the console.
-                    Patch suggested by JetsonHacks: https://github.com/jetsonhacks/buildLibrealsense2TX */
+                    Patch suggested by JetsonHacks: https://github.com/jetsonhacks/buildlibrealsense2TX */
                     std::string device_path_str(elem.c_str());
                     device_path_str+="/";
                     std::string dev_name;

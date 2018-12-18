@@ -14,7 +14,7 @@
 #define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #endif
 
-using namespace librealsense;
+using namespace librealuvc;
 using platform::uvc_device;
 
 void notifications_processor::raise_notification(const notification n) {
@@ -126,7 +126,7 @@ void show_leap_devcaps(std::shared_ptr<uvc_device> dev) {
 int do_stuff() {
   D("create_backend() ...");
   fflush(stdout);
-  auto backend = librealsense::platform::create_backend();
+  auto backend = librealuvc::platform::create_backend();
   D("backend %p", backend.get());
   auto uvc_info = backend->query_uvc_devices();
   D("query_uvc_devices() size %d", (int)uvc_info.size());

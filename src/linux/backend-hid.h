@@ -38,7 +38,7 @@
 #include <regex>
 #include <list>
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {

@@ -13,7 +13,7 @@
         static const std::string s##T##_##X##_str = make_less_screamy(#X);\
         return s##T##_##X##_str.c_str(); }
 
-namespace librealsense
+namespace librealuvc
 {
     std::string make_less_screamy(const char* str)
     {
@@ -50,7 +50,7 @@ namespace librealsense
 
     recoverable_exception::recoverable_exception(const std::string& msg,
         rs2_exception_type exception_type) noexcept
-        : librealsense_exception(msg, exception_type)
+        : librealuvc_exception(msg, exception_type)
     {
         LOG_WARNING(msg);
     }

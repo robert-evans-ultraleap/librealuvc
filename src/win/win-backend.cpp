@@ -17,7 +17,7 @@
 #include <dbt.h>
 #include <cctype> // std::tolower
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {

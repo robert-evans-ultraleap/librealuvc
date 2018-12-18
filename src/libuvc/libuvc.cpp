@@ -46,7 +46,7 @@ struct uvc_device_internal {
     int interface;
 };
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {

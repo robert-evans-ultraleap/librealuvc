@@ -38,7 +38,7 @@ DEFINE_GUID(GUID_DEVINTERFACE_CAMERA, 0xca3e7ab9, 0xb4c3, 0x4ae6, 0x82, 0x51, 0x
 
 #define CREATE_MUTEX_RETRY_NUM  (5)
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {
@@ -908,7 +908,7 @@ namespace librealsense
         {
             CString lstr;
             CString IDstr(camID);
-            // IVCAM_DLL string is left in librealsense to allow safe
+            // IVCAM_DLL string is left in librealuvc to allow safe
             // interoperability with existing tools like DCM
             lstr.Format(L"Global\\IVCAM_DLL_WINUSB_MUTEX%s", IDstr);
             auto pSecDesc = make_allow_all_security_descriptor();
@@ -941,7 +941,7 @@ namespace librealsense
         {
             CString lstr;
             CString IDstr(camID);
-            // IVCAM_DLL string is left in librealsense to allow safe
+            // IVCAM_DLL string is left in librealuvc to allow safe
             // interoperability with existing tools like DCM
             lstr.Format(L"Global\\IVCAM_DLL_WINUSB_MUTEX%s", IDstr.GetString());
 

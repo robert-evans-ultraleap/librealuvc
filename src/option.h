@@ -11,7 +11,7 @@
 #include <vector>
 #include <cmath>
 
-namespace librealsense
+namespace librealuvc
 {
     class observable_option
     {

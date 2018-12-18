@@ -3,7 +3,7 @@
 #include <memory>
 
 
-namespace librealsense
+namespace librealuvc
 {
     polling_error_handler::polling_error_handler(unsigned int poll_intervals_ms, std::unique_ptr<option> option,
         std::shared_ptr <notifications_processor> processor, std::unique_ptr<notification_decoder> decoder)

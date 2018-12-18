@@ -18,7 +18,7 @@
 
 #pragma comment(lib, "winusb.lib")
 
-namespace librealsense
+namespace librealuvc
 {
     namespace platform
     {
