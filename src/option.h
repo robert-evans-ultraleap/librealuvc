@@ -4,9 +4,7 @@
 #pragma once
 
 #include "backend.h"
-#include "archive.h"
-#include "hw-monitor.h"
-#include "sensor.h"
+#include "core/options.h"
 #include "core/streaming.h"
 
 #include <chrono>
@@ -164,6 +162,7 @@ namespace librealsense
         std::function<void(float)> _on_set;
     };
 
+#if 0
     class uvc_pu_option : public option
     {
     public:
@@ -277,6 +276,7 @@ namespace librealsense
         std::string         _desciption;
         std::function<void(const option&)> _recording_function = [](const option&) {};
     };
+#endif
 
     inline std::string hexify(unsigned char n)
     {
@@ -348,6 +348,7 @@ namespace librealsense
             (struct_interface, field, range);
     }
 
+#if 0
     class command_transfer_over_xu : public platform::command_transfer
     {
     public:
@@ -363,6 +364,7 @@ namespace librealsense
         platform::extension_unit _xu;
         uint8_t             _ctrl;
     };
+#endif
 
     class polling_error_handler;
 

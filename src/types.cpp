@@ -2,8 +2,6 @@
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
 
 #include "types.h"
-#include "device.h"
-#include "archive.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -63,6 +61,7 @@ namespace librealsense
         return f.good();
     }
 
+#if 0
     frame_holder::~frame_holder()
     {
         if (frame)
@@ -88,6 +87,7 @@ namespace librealsense
     {
         frame->acquire();
     }
+#endif
 
     const char* get_string(rs2_exception_type value)
     {

@@ -12,6 +12,7 @@
 #include "../include/librealsense2/hpp/rs_types.hpp"
 
 #include <stdint.h>
+#include <atomic>
 #include <cassert>                          // For assert
 #include <cstring>                          // For memcmp
 #include <vector>                           // For vector
