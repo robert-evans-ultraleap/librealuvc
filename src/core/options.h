@@ -3,7 +3,7 @@
 #pragma once
 
 #include <map>
-#include "../include/librealsense2/h/rs_option.h"
+#include "../include/librealuvc/h/rs_option.h"
 #include "extension.h"
 #include "types.h"
 

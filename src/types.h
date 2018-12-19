@@ -9,7 +9,7 @@
 #ifndef LIBREALUVC_TYPES_H
 #define LIBREALUVC_TYPES_H
 
-#include "../include/librealsense2/hpp/rs_types.hpp"
+#include "../include/librealuvc/hpp/rs_types.hpp"
 
 #include <stdint.h>
 #include <atomic>

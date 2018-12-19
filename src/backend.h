@@ -5,8 +5,8 @@
 #ifndef LIBREALUVC_BACKEND_H
 #define LIBREALUVC_BACKEND_H
 
-#include "../include/librealsense2/h/rs_types.h"     // Inherit all type definitions in the public API
-#include "../include/librealsense2/h/rs_option.h"
+#include "../include/librealuvc/h/rs_types.h"     // Inherit all type definitions in the public API
+#include "../include/librealuvc/h/rs_option.h"
 
 #include <memory>       // For shared_ptr
 #include <functional>   // For function

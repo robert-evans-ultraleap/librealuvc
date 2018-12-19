@@ -6,11 +6,11 @@
 # for failures should these constants be modified in future      #
 ##################################################################
 function(assign_version_property VER_COMPONENT)
-    file(STRINGS "./include/librealsense2/rs.h" REALSENSE_VERSION_${VER_COMPONENT} REGEX "#define RS2_API_${VER_COMPONENT}_VERSION")
+    file(STRINGS "./include/librealuvc/rs.h" REALSENSE_VERSION_${VER_COMPONENT} REGEX "#define RS2_API_${VER_COMPONENT}_VERSION")
     separate_arguments(REALSENSE_VERSION_${VER_COMPONENT})
     list(GET REALSENSE_VERSION_${VER_COMPONENT} -1 tmp)
     if (tmp LESS 0)
-        message( FATAL_ERROR "Could not obtain valid Librealsense version ${VER_COMPONENT} component - actual value is ${tmp}" )
+        message( FATAL_ERROR "Could not obtain valid Librealuvc version ${VER_COMPONENT} component - actual value is ${tmp}" )
     endif()
     set(REALSENSE_VERSION_${VER_COMPONENT} ${tmp} PARENT_SCOPE)
 endfunction()

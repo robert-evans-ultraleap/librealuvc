@@ -5,7 +5,7 @@ includedir=${prefix}/include
 libdir= ${prefix}/lib/x86_64-linux-gnu
 
 Name:
-Description: Intel(R) RealSense(tm) Cross Platform API
+Description: Cross-platform library for UVC devices
 Version: @REALSENSE_VERSION_STRING@
 URL: https://github.com/IntelRealSense/librealsense
 Requires.private: @LRS_PKG_DEPS@
