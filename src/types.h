@@ -929,7 +929,7 @@ namespace librealuvc
 
         void set_callback(notifications_callback_ptr callback);
         notifications_callback_ptr get_callback() const;
-        void raise_notification(const notification);
+        void raise_notification(const notification) { /*FIXME*/ }
 
     private:
         notifications_callback_ptr _callback;

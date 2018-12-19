@@ -17,11 +17,6 @@
 using namespace librealuvc;
 using platform::uvc_device;
 
-void notifications_processor::raise_notification(const notification n) {
-  printf("WARNING: raise_notification()\n");
-  fflush(stdout);
-}
-
 int nframe;
 
 void on_frame(
