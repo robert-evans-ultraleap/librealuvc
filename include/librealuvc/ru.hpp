@@ -5,6 +5,7 @@
 #define LIBREALUVC_RU_HPP
 
 #include "hpp/ru_common.hpp"
+#include "hpp/ru_exception.hpp"
 #include "hpp/ru_hid.hpp"
 #include "hpp/ru_usb.hpp"
 #include "hpp/ru_uvc.hpp"

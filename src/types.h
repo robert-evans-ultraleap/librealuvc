@@ -2,6 +2,7 @@
 #define LIBREALUVC_TYPES_H
 
 #include <librealuvc/hpp/ru_common.hpp>
+#include <librealuvc/hpp/ru_exception.hpp>
 #include <cassert>
 #include <cstring>
 #include <sstream>
