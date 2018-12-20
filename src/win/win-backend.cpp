@@ -41,7 +41,7 @@ namespace librealuvc
 
         std::shared_ptr<uvc_device> wmf_backend::create_uvc_device(uvc_device_info info) const
         {
-            return std::make_shared<retry_controls_work_around>(
+            return std::make_shared<uvc_device_with_retry>(
                             std::make_shared<wmf_uvc_device>(info, shared_from_this()));
         }
 

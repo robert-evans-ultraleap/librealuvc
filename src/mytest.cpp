@@ -15,7 +15,6 @@
 #endif
 
 using namespace librealuvc;
-using platform::uvc_device;
 
 int nframe;
 
@@ -121,7 +120,7 @@ void show_leap_devcaps(std::shared_ptr<uvc_device> dev) {
 int do_stuff() {
   D("create_backend() ...");
   fflush(stdout);
-  auto backend = librealuvc::platform::create_backend();
+  auto backend = librealuvc::create_backend();
   D("backend %p", backend.get());
   auto uvc_info = backend->query_uvc_devices();
   D("query_uvc_devices() size %d", (int)uvc_info.size());
@@ -132,7 +131,7 @@ int do_stuff() {
     printf("  pid: 0x%04x\n", (int)info.pid);
     auto dev = backend->create_uvc_device(info);
     D("create_uvc_device() -> %s", dev ? "pass" : "fail");
-    dev->set_power_state(platform::D0); // device fully on
+    dev->set_power_state(librealuvc::D0); // device fully on
     if (info.vid == 0x2936) {
       init_leap_xu(dev);
       show_leap_devcaps(dev);

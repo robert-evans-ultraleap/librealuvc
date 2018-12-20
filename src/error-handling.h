@@ -1,8 +1,8 @@
 #pragma once
+#if 0
 
 #include "concurrency.h"
 #include "option.h"
-#include "types.h"
 
 namespace librealuvc
 {
@@ -28,3 +28,5 @@ namespace librealuvc
     };
 
 }
+
+#endif

@@ -1,5 +1,6 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
+#if 0
 
 #include "types.h"
 
@@ -594,3 +595,6 @@ namespace librealuvc
         std::copy(from, from + size, reinterpret_cast<uint8_t*>(dst));
     }
 }
+
+#endif
+

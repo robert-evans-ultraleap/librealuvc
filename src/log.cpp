@@ -1,162 +1,86 @@
+#include <cstdio>
+#include <mutex>
+
 #include "types.h"
 
-#include <fstream>
+namespace librealuvc {
+  
+namespace { // anon
 
-#if BUILD_EASYLOGGINGPP
-INITIALIZE_EASYLOGGINGPP
+class single_logger {
+ public:
+  std::mutex mutex_;
+  ru_severity sev_console_;
+  ru_severity sev_file_;
+  FILE* log_;
+ 
+ public:
+  single_logger() :
+    mutex_(),
+    sev_console_(RU_SEVERITY_ERROR),
+    sev_file_(RU_SEVERITY_NONE),
+    log_(nullptr) {
+  }
+  
+  void log_to_file(ru_severity min_sev, const char* file_path) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (log_) fclose(log_);
+    log_ = fopen(file_path, "w");
+    if (!log_) {
+      fprintf(stderr, "ERROR: can't write to logfile \"%s\"\n", file_path);
+      exit(1);
+    }
+    sev_file_ = min_sev;
+  }
+  
+  static const char* sev2str(ru_severity sev) {
+    switch (sev) {
+      case RU_SEVERITY_DEBUG:   return "DEBUG";
+      case RU_SEVERITY_INFO:    return "INFO";
+      case RU_SEVERITY_WARNING: return "WARNING";
+      case RU_SEVERITY_ERROR:   return "ERROR";
+      case RU_SEVERITY_FATAL:   return "FATAL";
+      default: return "UNKNOWN";
+    }
+  }
+  
+  void log_msg(ru_severity sev, const std::stringstream& ss) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    bool want_console = (sev >= sev_console_);
+    bool want_file = ((sev >= sev_file_) && log_);
+    if (!want_console && !want_file) return;
+    auto sev_str = sev2str(sev);
+    auto msg = ss.str();
+    if (want_console) {
+      printf("%s: librealuvc: ", sev_str);
+      fwrite(msg.data(), 1, msg.length(), stdout);
+      fflush(stdout);
+    }
+    if (want_file) {
+      fprintf(log_, "%s: librealuvc: ", sev_str);
+      fwrite(msg.data(), 1, msg.length(), log_);
+      fflush(log_);
+    }
+  }
+};
 
-namespace librealuvc
-{
-    class logger_type
-    {
-        rs2_log_severity minimum_log_severity = RS2_LOG_SEVERITY_NONE;
-        rs2_log_severity minimum_console_severity = RS2_LOG_SEVERITY_NONE;
-        rs2_log_severity minimum_file_severity = RS2_LOG_SEVERITY_NONE;
-        rs2_log_severity minimum_callback_severity = RS2_LOG_SEVERITY_NONE;
-
-        std::mutex log_mutex;
-        std::ofstream log_file;
-        log_callback_ptr callback;
-
-        std::string filename;
-        const std::string log_id = "librealuvc";
-
-    public:
-        static el::Level severity_to_level(rs2_log_severity severity)
-        {
-            switch (severity)
-            {
-            case RS2_LOG_SEVERITY_DEBUG: return el::Level::Debug;
-            case RS2_LOG_SEVERITY_INFO: return el::Level::Info;
-            case RS2_LOG_SEVERITY_WARN: return el::Level::Warning;
-            case RS2_LOG_SEVERITY_ERROR: return el::Level::Error;
-            case RS2_LOG_SEVERITY_FATAL: return el::Level::Fatal;
-            default: return el::Level::Unknown;
-            }
-        }
-
-        void open() const
-        {
-            el::Configurations defaultConf;
-            defaultConf.setToDefault();
-            // To set GLOBAL configurations you may use
-
-            defaultConf.setGlobally(el::ConfigurationType::ToFile, "false");
-            defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
-            defaultConf.setGlobally(el::ConfigurationType::MaxLogFileSize, "2097152");
-            defaultConf.setGlobally(el::ConfigurationType::LogFlushThreshold, "10");
-            defaultConf.setGlobally(el::ConfigurationType::Format, " %datetime{%d/%M %H:%m:%s,%g} %level [%thread] (%fbase:%line) %msg");
-
-            for (int i = minimum_console_severity; i < RS2_LOG_SEVERITY_NONE; i++)
-            {
-                defaultConf.set(severity_to_level(static_cast<rs2_log_severity>(i)),
-                    el::ConfigurationType::ToStandardOutput, "true");
-            }
-
-            for (int i = minimum_file_severity; i < RS2_LOG_SEVERITY_NONE; i++)
-            {
-                defaultConf.setGlobally(el::ConfigurationType::Filename, filename);
-                defaultConf.set(severity_to_level(static_cast<rs2_log_severity>(i)),
-                    el::ConfigurationType::ToFile, "true");
-            }
-
-            el::Loggers::reconfigureLogger(log_id, defaultConf);
-        }
-
-        void open_def() const
-        {
-            el::Configurations defaultConf;
-            defaultConf.setToDefault();
-            // To set GLOBAL configurations you may use
-
-            defaultConf.setGlobally(el::ConfigurationType::ToFile, "false");
-            defaultConf.setGlobally(el::ConfigurationType::ToStandardOutput, "false");
-
-            el::Loggers::reconfigureLogger(log_id, defaultConf);
-        }
-
-
-        logger_type()
-            : callback(nullptr, [](rs2_log_callback*) {}),
-              filename(to_string() << datetime_string() << ".log")
-        {
-            rs2_log_severity severity;
-            if (try_get_log_severity(severity))
-            {
-                log_to_file(severity, filename.c_str());
-            }
-            else
-            {
-                open_def();
-            }
-        }
-
-        static bool try_get_log_severity(rs2_log_severity& severity)
-        {
-            static const char* severity_var_name = "LRS_LOG_LEVEL";
-            auto content = getenv(severity_var_name);
-
-            if (content)
-            {
-                std::string content_str(content);
-                std::transform(content_str.begin(), content_str.end(), content_str.begin(), ::tolower);
-
-                for (uint32_t i = 0; i < RS2_LOG_SEVERITY_COUNT; i++)
-                {
-                    auto current = (rs2_log_severity)i;
-                    std::string name = librealuvc::get_string(current);
-                    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-                    if (content_str == name)
-                    {
-                        severity = current;
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        void log_to_console(rs2_log_severity min_severity)
-        {
-            minimum_console_severity = min_severity;
-            open();
-        }
-
-        void log_to_file(rs2_log_severity min_severity, const char * file_path)
-        {
-            if (!try_get_log_severity(minimum_file_severity))
-                minimum_file_severity = min_severity;
-
-            if (file_path)
-                filename = file_path;
-
-            open();
-        }
-    };
-
-    static logger_type logger;
+single_logger* get_single_logger() {
+  static single_logger single;
+  return &single;
 }
 
-void librealuvc::log_to_console(rs2_log_severity min_severity)
-{
-    logger.log_to_console(min_severity);
+} // end anon
+
+void log_to_console(ru_severity min_sev) {
+  get_single_logger()->sev_console_ = min_sev;
 }
 
-void librealuvc::log_to_file(rs2_log_severity min_severity, const char * file_path)
-{
-    logger.log_to_file(min_severity, file_path);
+void log_to_file(ru_severity min_sev, const char* file_path) {
+  get_single_logger()->log_to_file(min_sev, file_path);
 }
 
-#else // BUILD_EASYLOGGINGPP
-
-void librealuvc::log_to_console(rs2_log_severity min_severity)
-{
+void log_msg(ru_severity sev, const std::stringstream& ss) {
+  get_single_logger()->log_msg(sev, ss);
 }
 
-void librealuvc::log_to_file(rs2_log_severity min_severity, const char * file_path)
-{
 }
-
-#endif // BUILD_EASYLOGGINGPP
-

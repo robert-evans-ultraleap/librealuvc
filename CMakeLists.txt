@@ -28,6 +28,8 @@ endif()
 # set library version
 set_target_properties(${LRS_TARGET} PROPERTIES VERSION ${REALSENSE_VERSION_STRING} SOVERSION ${REALSENSE_VERSION_MAJOR})
 
+# add_OpenCV()
+
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
 include(third-party/CMakeLists.txt)

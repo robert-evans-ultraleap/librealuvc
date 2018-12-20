@@ -22,7 +22,9 @@ namespace librealuvc
     class extendable_interface
     {
     public:
+#if 0
         virtual bool extend_to(rs2_extension extension_type, void** ptr) = 0;
+#endif
         virtual ~extendable_interface() = default;
     };
 

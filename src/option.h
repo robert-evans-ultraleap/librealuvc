@@ -2,6 +2,7 @@
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
 
 #pragma once
+#if 0
 
 #include "backend.h"
 #include "core/options.h"
@@ -472,3 +473,4 @@ namespace librealuvc
        std::function<void(const option&)> _recording_function = [](const option&) {};
    };
 }
+#endif

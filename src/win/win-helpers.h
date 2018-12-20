@@ -6,6 +6,7 @@
 #define NOMINMAX
 #endif
 
+#include <librealuvc/hpp/ru_uvc.hpp>
 #include <string>
 #include <vector>
 

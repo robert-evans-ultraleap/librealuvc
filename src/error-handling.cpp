@@ -1,5 +1,7 @@
 #include "error-handling.h"
 
+#if 0
+
 #include <memory>
 
 
@@ -76,3 +78,5 @@ namespace librealuvc
          }
     }
 }
+#endif
+
