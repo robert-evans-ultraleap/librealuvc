@@ -5,6 +5,7 @@
 #include <librealuvc/ru.hpp>
 #include <chrono>
 #include <cstdint>
+#include <thread>
 #include <vector>
 
 namespace librealuvc {
@@ -65,6 +66,9 @@ bool uvc_device_info::operator==(const uvc_device_info& b) const {
   );
 }
 
+static constexpr int MAX_RETRIES = 40;
+static constexpr int DELAY_FOR_RETRIES = 100;
+
 uvc_device_with_retry::uvc_device_with_retry(shared_ptr<uvc_device> raw) :
   raw_(raw) {
 }
@@ -102,11 +106,23 @@ void uvc_device_with_retry::init_xu(const extension_unit& xu) {
 }
 
 bool uvc_device_with_retry::set_xu(const extension_unit& xu, uint8_t ctrl, const uint8_t* data, int len) {
-  return raw_->set_xu(xu, ctrl, data, len);
+  auto snooze = std::chrono::milliseconds(DELAY_FOR_RETRIES);
+  for (auto j = 0;;) {
+    if (raw_->set_xu(xu, ctrl, data, len)) return true;
+    if (++j >= MAX_RETRIES) break;
+    std::this_thread::sleep_for(snooze);
+  }
+  return false;
 }
 
 bool uvc_device_with_retry::get_xu(const extension_unit& xu, uint8_t ctrl, uint8_t* data, int len) const {
-  return raw_->get_xu(xu, ctrl, data, len);
+  auto snooze = std::chrono::milliseconds(DELAY_FOR_RETRIES);
+  for (auto j = 0;;) {
+    if (raw_->get_xu(xu, ctrl, data, len)) return true;
+    if (++j >= MAX_RETRIES) break;
+    std::this_thread::sleep_for(snooze);
+  }
+  return false;
 }
 
 control_range uvc_device_with_retry::get_xu_range(const extension_unit& xu, uint8_t ctrl, int len) const {
@@ -114,11 +130,23 @@ control_range uvc_device_with_retry::get_xu_range(const extension_unit& xu, uint
 }
 
 bool uvc_device_with_retry::get_pu(ru_option opt, int32_t& value) const {
-  return raw_->get_pu(opt, value);
+  auto snooze = std::chrono::milliseconds(DELAY_FOR_RETRIES);
+  for (auto j = 0;;) {
+    if (raw_->get_pu(opt, value)) return true;
+    if (++j >= MAX_RETRIES) break;
+    std::this_thread::sleep_for(snooze);
+  }
+  return false;
 }
 
 bool uvc_device_with_retry::set_pu(ru_option opt, int32_t value) {
-  return raw_->set_pu(opt, value);
+  auto snooze = std::chrono::milliseconds(DELAY_FOR_RETRIES);
+  for (auto j = 0;;) {
+    if (raw_->set_pu(opt, value)) return true;
+    if (++j >= MAX_RETRIES) break;
+    std::this_thread::sleep_for(snooze);
+  }
+  return false;
 }
 
 control_range uvc_device_with_retry::get_pu_range(ru_option opt) const {
