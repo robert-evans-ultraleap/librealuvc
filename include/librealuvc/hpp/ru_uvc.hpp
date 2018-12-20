@@ -35,16 +35,22 @@ struct guid {
   uint16_t data2;
   uint16_t data3;
   uint8_t data4[8];
+
+  string to_string() const;
+  operator string() const { return this->to_string(); }
 };
 
 // Host driver assigns subdevice and node
 // unit and guid are hard-coded in firmware
 
 struct extension_unit {
-   int subdevice;
-   int unit;
-   int node;
-   guid id;
+  int subdevice;
+  int unit;
+  int node;
+  guid id;
+   
+  string to_string() const;
+  operator string() const { return this->to_string(); }
 };
 
 enum power_state {
@@ -105,7 +111,8 @@ class uvc_device_info {
   ~uvc_device_info() = default;
   bool operator==(const uvc_device_info& b) const;
   bool operator<(const uvc_device_info& b) const;
-  operator std::string() const;
+  string to_string() const;
+  operator string() const { return this->to_string(); }
 };
 
 class uvc_device_with_retry : public uvc_device {

@@ -6,7 +6,7 @@ add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/c
 include(CMakePackageConfigHelpers)
 
 write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/realuvcConfigVersion.cmake"
-    VERSION ${REALSENSE_VERSION_STRING} COMPATIBILITY AnyNewerVersion)
+    VERSION ${REALUVC_VERSION_STRING} COMPATIBILITY AnyNewerVersion)
 
 configure_package_config_file(CMake/realuvcConfig.cmake.in realuvcConfig.cmake
     INSTALL_DESTINATION ${CMAKECONFIG_INSTALL_DIR}

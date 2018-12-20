@@ -20,16 +20,13 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/../include)
 target_sources(${LRS_TARGET}
     PRIVATE
         "${CMAKE_CURRENT_LIST_DIR}/backend.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/error-handling.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/log.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/types.cpp"
 
         "${CMAKE_CURRENT_LIST_DIR}/api.h"
         "${CMAKE_CURRENT_LIST_DIR}/backend.h"
         "${CMAKE_CURRENT_LIST_DIR}/concurrency.h"
-        "${CMAKE_CURRENT_LIST_DIR}/error-handling.h"
         "${CMAKE_CURRENT_LIST_DIR}/leap_xu.h"
-        "${CMAKE_CURRENT_LIST_DIR}/option.h"
         "${CMAKE_CURRENT_LIST_DIR}/types.h"
 )
 
@@ -38,7 +35,6 @@ add_executable(
 	    "${CMAKE_CURRENT_LIST_DIR}/mytest.cpp"
 
         "${CMAKE_CURRENT_LIST_DIR}/backend.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/error-handling.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/log.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/types.cpp"
 		

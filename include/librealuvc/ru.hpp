@@ -10,6 +10,13 @@
 #include "hpp/ru_usb.hpp"
 #include "hpp/ru_uvc.hpp"
 
+// These macro definitions are parsed by config_version.cmake
+
+#define RU_API_MAJOR_VERSION    0
+#define RU_API_MINOR_VERSION    1
+#define RU_API_PATCH_VERSION    1
+#define RU_API_BUILD_VERSION    0
+
 namespace librealuvc {
 
 using std::shared_ptr;
@@ -61,8 +68,9 @@ class backend_device_group {
     const std::vector<hid_device_info>& hid_devs
   );
 
-  bool operator==(const backend_device_group& b) const;  
-  operator string() const;
+  bool operator==(const backend_device_group& b) const;
+  string to_string() const;
+  operator string() const { return this->to_string(); }
 };
 
 typedef std::function<

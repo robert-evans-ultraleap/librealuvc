@@ -42,6 +42,8 @@ class stream_profile {
  public:
   bool operator==(const stream_profile& b) const;
   operator stream_profile_tuple() const;
+  string to_string() const;
+  operator string() const { return this->to_string(); }
 };
 
 // The third arg to frame_callback is a func to release the frame's buffer
@@ -66,11 +68,7 @@ enum usb_spec : uint16_t {
   usb3_2_type     = 0x0320,
 };
 
-typedef std::map<usb_spec, string> usb_spec_map;
-
-usb_spec_map& get_single_usb_spec_map();
-
-#define usb_spec_names get_single_usb_spec_map()
+extern const std::map<usb_spec, string> usb_spec_names;
 
 } // end librealuvc
 

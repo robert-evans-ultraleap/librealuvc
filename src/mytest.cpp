@@ -63,7 +63,7 @@ platform::extension_unit leap_xu() {
   platform::extension_unit xu;
   xu.subdevice = 0;
   xu.unit = 1;
-  xu.node = 0;
+  xu.node = 4;
   platform::guid id = LEAP_XU_GUID;
   xu.id = id;
   return xu;
@@ -127,8 +127,7 @@ int do_stuff() {
   for (size_t idx = 0; idx < uvc_info.size(); ++idx) {
     auto& info = uvc_info[idx];
     printf("uvc[%d]:\n", (int)idx);
-    printf("  vid: 0x%04x\n", (int)info.vid);
-    printf("  pid: 0x%04x\n", (int)info.pid);
+    printf("  %s\n", ((std::string)info).c_str());
     auto dev = backend->create_uvc_device(info);
     D("create_uvc_device() -> %s", dev ? "pass" : "fail");
     dev->set_power_state(librealuvc::D0); // device fully on
@@ -164,4 +163,6 @@ int main() {
   } catch (std::exception e) {
 	  printf("ERROR: caught exception %s\n", e.what());
   }
+  exit(0);
+  return 0;
 }

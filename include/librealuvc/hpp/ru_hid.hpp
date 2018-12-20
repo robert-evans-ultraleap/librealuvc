@@ -22,8 +22,9 @@ class hid_device_info {
   string serial_number;
   
  public:
-  bool operator==(const hid_device_info& b) const;  
-  operator string() const;
+  bool operator==(const hid_device_info& b) const;
+  string to_string() const;
+  operator string() const { return this->to_string(); }
 };
 
 struct hid_profile {

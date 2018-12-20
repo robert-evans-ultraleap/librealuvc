@@ -39,7 +39,8 @@ class usb_device_info {
  
  public:
   bool operator==(const usb_device_info& b) const;
-  operator std::string() const;
+  string to_string() const;
+  operator string() const { return this->to_string(); }
 };
 
 } // end librealuvc

@@ -41,6 +41,17 @@ ru_time_t os_time_service::get_time() const {
   return duration<double, std::milli>(system_clock::now().time_since_epoch()).count();
 }
 
+const std::map<usb_spec, string> usb_spec_names = {
+  { usb_undefined, "Undefined" },
+  { usb1_type,     "1.0" },
+  { usb1_1_type,   "1.1" },
+  { usb2_type,     "2.0" },
+  { usb2_1_type,   "2.1" },
+  { usb3_type,     "3.0" },
+  { usb3_1_type,   "3.1" },
+  { usb3_2_type,   "3.2" }
+};
+
 uvc_device_info::uvc_device_info() :
   id(""),
   vid(0),
