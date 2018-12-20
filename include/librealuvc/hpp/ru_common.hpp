@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -65,12 +66,11 @@ enum usb_spec : uint16_t {
   usb3_2_type     = 0x0320,
 };
 
-class usb_spec_map {
- public:
-  const string& operator[](usb_spec spec) const;
-};
+typedef std::map<usb_spec, string> usb_spec_map;
 
-usb_spec_map usb_spec_names;
+usb_spec_map& get_single_usb_spec_map();
+
+#define usb_spec_names get_single_usb_spec_map()
 
 } // end librealuvc
 

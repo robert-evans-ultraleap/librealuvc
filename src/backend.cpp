@@ -15,16 +15,49 @@
 
 #include "backend.h"
 
-void librealuvc::platform::control_range::populate_raw_data(std::vector<uint8_t>& vec, int32_t value)
-{
+namespace librealuvc {
+
+using std::shared_ptr;
+using std::string;
+
+shared_ptr<backend> create_backend() {
+  return platform::create_backend();
+}
+
+// control_range is declared in <librealuvc/hpp/ru_uvc.hpp>
+
+control_range::control_range() { }
+
+control_range::control_range(int32_t amin, int32_t amax, int32_t astep, int32_t adef) {
+  populate_raw_data(min, amin);
+  populate_raw_data(max, amax);
+  populate_raw_data(step, astep);
+  populate_raw_data(def, adef);
+}
+
+control_range::control_range(
+  vector<uint8_t> amin,
+  vector<uint8_t> amax,
+  vector<uint8_t> astep,
+  vector<uint8_t> adef
+) :
+  min(amin),
+  max(amax),
+  step(astep),
+  def(adef) {
+}
+
+void control_range::populate_raw_data(std::vector<uint8_t>& vec, int32_t value) {
     vec.resize(sizeof(value));
     auto data = reinterpret_cast<const uint8_t*>(&value);
     std::copy(data, data + sizeof(value), vec.data());
 }
 
-double librealuvc::monotonic_to_realtime(double monotonic)
-{
-    auto realtime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    auto time_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
-    return monotonic + (realtime - time_since_epoch);
+double monotonic_to_realtime(double monotonic) {
+  using namespace std::chrono;
+  auto realtime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+  auto time_since_epoch = duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+  return monotonic + (realtime - time_since_epoch);
 }
+
+} // end librealuvc

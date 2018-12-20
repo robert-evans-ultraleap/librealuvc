@@ -110,36 +110,36 @@ class uvc_device_info {
 
 class uvc_device_with_retry : public uvc_device {
  private:
-   shared_ptr<uvc_device> raw;
+   shared_ptr<uvc_device> raw_;
  public:
-  uvc_device_with_retry(shared_ptr<uvc_device> raw);
+  explicit uvc_device_with_retry(shared_ptr<uvc_device> raw);
   virtual ~uvc_device_with_retry() = default;
   
-  virtual void probe_and_commit(stream_profile prof, frame_callback callback, int buffers = 4) = 0;
-  virtual void stream_on(error_callback on_error = [](const notification&){}) = 0;
-  virtual void start_callbacks() = 0;
-  virtual void stop_callbacks() = 0;
-  virtual void close(stream_profile profile) = 0;
+  virtual void probe_and_commit(stream_profile prof, frame_callback callback, int buffers = 4);
+  virtual void stream_on(error_callback on_error = [](const notification&){});
+  virtual void start_callbacks();
+  virtual void stop_callbacks();
+  virtual void close(stream_profile profile);
 
-  virtual void set_power_state(power_state state) = 0;
-  virtual power_state get_power_state() const = 0;
+  virtual void set_power_state(power_state state);
+  virtual power_state get_power_state() const;
 
-  virtual void init_xu(const extension_unit& xu) = 0;
-  virtual bool set_xu(const extension_unit& xu, uint8_t ctrl, const uint8_t* data, int len) = 0;
-  virtual bool get_xu(const extension_unit& xu, uint8_t ctrl, uint8_t* data, int len) const = 0;
-  virtual control_range get_xu_range(const extension_unit& xu, uint8_t ctrl, int len) const = 0;
+  virtual void init_xu(const extension_unit& xu);
+  virtual bool set_xu(const extension_unit& xu, uint8_t ctrl, const uint8_t* data, int len);
+  virtual bool get_xu(const extension_unit& xu, uint8_t ctrl, uint8_t* data, int len) const;
+  virtual control_range get_xu_range(const extension_unit& xu, uint8_t ctrl, int len) const;
 
-  virtual bool get_pu(ru_option opt, int32_t& value) const = 0;
-  virtual bool set_pu(ru_option opt, int32_t value) = 0;
-  virtual control_range get_pu_range(ru_option opt) const = 0;
+  virtual bool get_pu(ru_option opt, int32_t& value) const;
+  virtual bool set_pu(ru_option opt, int32_t value);
+  virtual control_range get_pu_range(ru_option opt) const;
 
-  virtual vector<stream_profile> get_profiles() const = 0;
+  virtual vector<stream_profile> get_profiles() const;
 
-  virtual void lock() const = 0;
-  virtual void unlock() const = 0;
+  virtual void lock() const;
+  virtual void unlock() const;
 
-  virtual string get_device_location() const = 0;
-  virtual usb_spec get_usb_specification() const = 0;
+  virtual string get_device_location() const;
+  virtual usb_spec get_usb_specification() const;
 };
 
 } // end librealuvc
