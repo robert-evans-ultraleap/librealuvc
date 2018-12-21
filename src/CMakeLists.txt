@@ -12,7 +12,7 @@ if(BUILD_FOR_OTHER_WIN)
 endif()
 
 if(BUILD_SHARED_LIBS)
-    target_sources(${LRS_TARGET} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/realuvc.def")
+    add_compile_options("-DLIBREALUVC_BUILD_SHARED=1 -DLIBREALUVC_EXPORTS=1")
 endif()
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/../include)

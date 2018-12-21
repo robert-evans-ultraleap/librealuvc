@@ -12,6 +12,20 @@
 #include <tuple>
 #include <vector>
 
+// FIXME: this interface only works as a static lib.  To make it work
+//        as a Windows DLL, we would need to hide the STL classes
+//        behind wrapper classes declared with __declspec(dll_export)
+
+#if defined(_MSC_VER) && 0
+  #ifdef LIBREALUVC_EXPORTS
+    #define LIBREALUVC_EXPORT __declspec(dllexport)
+  #else
+    #define LIBREALUVC_EXPORT __declspec(dllimport)
+  #endif
+#else
+  #define LIBREALUVC_EXPORT
+#endif
+
 namespace librealuvc {
 
 using std::shared_ptr;
@@ -32,7 +46,7 @@ struct frame_object {
 
 typedef std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> stream_profile_tuple;
 
-class stream_profile {
+class LIBREALUVC_EXPORT stream_profile {
  public:
   uint32_t width;
   uint32_t height;

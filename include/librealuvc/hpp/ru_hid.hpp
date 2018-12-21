@@ -12,7 +12,7 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-class hid_device_info {
+class LIBREALUVC_EXPORT hid_device_info {
  public:
   string id;
   string vid;

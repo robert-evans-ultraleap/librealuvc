@@ -28,7 +28,7 @@ class usb_device : public command_transfer {
   // interrupt endpoint and any additional USB specific stuff
 };
 
-class usb_device_info {
+class LIBREALUVC_EXPORT usb_device_info {
  public:
   string id;
   uint16_t vid;

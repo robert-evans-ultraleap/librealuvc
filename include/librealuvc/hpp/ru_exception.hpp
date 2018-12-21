@@ -34,7 +34,7 @@
    
    virtual const char* what() const noexcept { return what_.c_str(); }
 
-   ru_exception_type get_type() const { return type_; }
+   inline ru_exception_type get_type() const { return type_; }
  };
  
  template<ru_exception_type T>

@@ -5,6 +5,7 @@
 #include <librealuvc/ru.hpp>
 #include <chrono>
 #include <cstdint>
+#include <sstream>
 #include <thread>
 #include <vector>
 
@@ -76,6 +77,8 @@ bool uvc_device_info::operator==(const uvc_device_info& b) const {
     (conn_spec == b.conn_spec)
   );
 }
+
+// A uvc_device wrapper which retires get/set_pu and get/set_xu calls
 
 static constexpr int MAX_RETRIES = 40;
 static constexpr int DELAY_FOR_RETRIES = 100;
@@ -182,6 +185,84 @@ string uvc_device_with_retry::get_device_location() const {
 
 usb_spec uvc_device_with_retry::get_usb_specification() const {
   return raw_->get_usb_specification();
+}
+
+// Converting various structs to strings
+
+#define MEMBER(name) { \
+  string val = fmt(name); \
+  ss << "  " << #name << ": " << val << "," << "\n"; \
+}
+template<typename T>
+inline string fmt(T val) {
+  std::stringstream ss; ss << val; return ss.str();
+};
+
+template<>
+inline string fmt(uint8_t val) { char buf[64]; sprintf(buf, "0x%02x", (int)val); return string(buf); };
+template<>
+inline string fmt(uint16_t val) { char buf[64]; sprintf(buf, "0x%04x", (int)val); return string(buf); };
+template<>
+inline string fmt(uint32_t val) { char buf[64]; sprintf(buf, "0x%08x", (int)val); return string(buf); };
+template<>
+inline string fmt(const string& val) {
+  std::stringstream ss;
+  ss << '\"' << val << '\"';
+  return ss.str();
+};
+
+string stream_profile::to_string() const {
+  std::stringstream ss;
+  ss << "{\n";
+  MEMBER(width);
+  MEMBER(height);
+  MEMBER(fps);
+  MEMBER(format);
+  ss << "}";
+  return ss.str();
+}
+
+string hid_device_info::to_string() const {
+  std::stringstream ss;
+  ss << "{\n";
+  MEMBER(id);
+  MEMBER(vid);
+  MEMBER(pid);
+  MEMBER(unique_id);
+  MEMBER(device_path);
+  MEMBER(serial_number);
+  ss << "}";
+  return ss.str();
+}
+
+string usb_device_info::to_string() const {
+  std::stringstream ss;
+  ss << "{\n";
+  MEMBER(id);
+  MEMBER(vid);
+  MEMBER(pid);
+  MEMBER(mi);
+  MEMBER(unique_id);
+  MEMBER(conn_spec);
+  ss << "}";
+  return ss.str();
+}
+
+string uvc_device_info::to_string() const {
+  std::stringstream ss;
+  ss << "{\n";
+  MEMBER(id);
+  MEMBER(vid);
+  MEMBER(pid);
+  MEMBER(mi);
+  MEMBER(unique_id);
+  MEMBER(device_path);
+  MEMBER(conn_spec);
+  MEMBER(uvc_capabilities);
+  MEMBER(has_metadata_node);
+  MEMBER(metadata_node_id);
+  ss << "}";
+  return ss.str();
 }
 
 } // end librealuvc
