@@ -26,7 +26,7 @@ else()
 endif()
 
 # set library version
-set_target_properties(${LRS_TARGET} PROPERTIES VERSION ${REALSENSE_VERSION_STRING} SOVERSION ${REALSENSE_VERSION_MAJOR})
+set_target_properties(${LRS_TARGET} PROPERTIES VERSION ${REALUVC_VERSION_STRING} SOVERSION ${REALUVC_VERSION_MAJOR})
 
 # add_OpenCV()
 
@@ -41,6 +41,8 @@ os_target_config()
 # global project configuration
 # macro definition located at "CMake/global_config.cmake"
 global_target_config()
+
+add_subdirectory(wrappers)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(examples)

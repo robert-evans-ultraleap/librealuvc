@@ -30,6 +30,7 @@ typedef librealuvc::backend_device_group backend_device_group;
 typedef librealuvc::control_range control_range;
 typedef librealuvc::frame_object frame_object;
 typedef librealuvc::notification notification;
+typedef librealuvc::os_time_service os_time_service;
 typedef librealuvc::power_state power_state;
 typedef librealuvc::time_service time_service;
 typedef librealuvc::guid guid;
