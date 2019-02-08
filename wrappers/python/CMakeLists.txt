@@ -67,7 +67,7 @@ if(${BACKEND} STREQUAL "RS2_USE_LIBUVC_BACKEND")
   )
 endif()
 
-pybind11_add_module(pyrealuvc SHARED ${RAW_RS_CPP} ${RAW_RS_HPP})
+pybind11_add_module(pyrealuvc MODULE ${RAW_RS_CPP} ${RAW_RS_HPP})
 if(USE_EXTERNAL_USB)
   #add_dependencies(pyrealuvc libusb)
 endif()

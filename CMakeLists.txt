@@ -20,13 +20,18 @@ os_set_flags()
 global_set_flags()
 
 if(BUILD_SHARED_LIBS)
-    add_library(${LRS_TARGET} SHARED "")
-else()
-    add_library(${LRS_TARGET} STATIC "")
+  add_library(${LRS_TARGET} SHARED "")
+endif()
+if(BUILD_STATIC_LIBS)
+  add_library(${LRS_TARGET}_static STATIC "")
 endif()
 
 # set library version
-set_target_properties(${LRS_TARGET} PROPERTIES VERSION ${REALUVC_VERSION_STRING} SOVERSION ${REALUVC_VERSION_MAJOR})
+set_target_properties(${LRS_TARGET} PROPERTIES
+  WINDOWS_EXPORT_ALL_SYMBOLS ON
+  VERSION ${REALUVC_VERSION_STRING}
+  SOVERSION ${REALUVC_VERSION_MAJOR}
+)
 
 # add_OpenCV()
 

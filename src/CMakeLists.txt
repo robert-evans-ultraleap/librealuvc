@@ -28,15 +28,6 @@ target_sources(${LRS_TARGET}
         "${CMAKE_CURRENT_LIST_DIR}/concurrency.h"
         "${CMAKE_CURRENT_LIST_DIR}/leap_xu.h"
         "${CMAKE_CURRENT_LIST_DIR}/types.h"
-)
-
-add_executable(
-    mytest
-	    "${CMAKE_CURRENT_LIST_DIR}/mytest.cpp"
-
-        "${CMAKE_CURRENT_LIST_DIR}/backend.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/log.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/types.cpp"
 		
         "${CMAKE_CURRENT_LIST_DIR}/win/win-helpers.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/win/win-uvc.cpp"
@@ -45,4 +36,9 @@ add_executable(
         "${CMAKE_CURRENT_LIST_DIR}/win/win-backend.cpp"
 		
 )
+
+#add_executable(
+#    mytest
+#	    "${CMAKE_CURRENT_LIST_DIR}/mytest.cpp"
+#)
 
