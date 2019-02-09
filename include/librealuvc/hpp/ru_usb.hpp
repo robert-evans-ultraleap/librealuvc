@@ -12,7 +12,7 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 
-class command_transfer {
+class LIBREALUVC_EXPORT command_transfer {
  public:
   virtual ~command_transfer() = default;
 
@@ -23,7 +23,7 @@ class command_transfer {
   ) = 0;
 };
 
-class usb_device : public command_transfer {
+class LIBREALUVC_EXPORT usb_device : public command_transfer {
  public:
   // interrupt endpoint and any additional USB specific stuff
 };

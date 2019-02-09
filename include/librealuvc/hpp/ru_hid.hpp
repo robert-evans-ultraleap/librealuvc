@@ -71,7 +71,7 @@ enum custom_sensor_report_field {
 
 typedef std::function<void(const sensor_data&)> hid_callback;
 
-class hid_device {
+class LIBREALUVC_EXPORT hid_device {
  public:
   virtual ~hid_device() = default;
   virtual void open(const vector<hid_profile>& hid_profiles) = 0;

@@ -58,7 +58,7 @@ enum power_state {
   D3  // sleep
 };
 
-class uvc_device {
+class LIBREALUVC_EXPORT uvc_device {
  public:
   typedef std::function<void(const notification&)> error_callback;
  protected:
@@ -115,7 +115,7 @@ class LIBREALUVC_EXPORT uvc_device_info {
   operator string() const { return this->to_string(); }
 };
 
-class uvc_device_with_retry : public uvc_device {
+class LIBREALUVC_EXPORT uvc_device_with_retry : public uvc_device {
  private:
    shared_ptr<uvc_device> raw_;
  public:

@@ -67,7 +67,7 @@ typedef std::function<
   void(const stream_profile&, const frame_object&, std::function<void()>)
 > frame_callback;
 
-class notification {
+class LIBREALUVC_EXPORT notification {
   // FIXME
 };
 
