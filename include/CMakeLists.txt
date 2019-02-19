@@ -1,10 +1,10 @@
 target_sources(${LRS_TARGET}
     PRIVATE
-        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru.hpp"
-        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/hpp/ru_common.hpp"
-        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/hpp/ru_exception.hpp"
-        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/hpp/ru_hid.hpp"
-        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/hpp/ru_option.hpp"
-        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/hpp/ru_usb.hpp"
-        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/hpp/ru_uvc.hpp"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/realuvc.h"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_common.h"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_exception.h"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_hid.h"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_option.h"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_usb.h"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_uvc.h"
 )
