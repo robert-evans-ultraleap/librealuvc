@@ -5,7 +5,7 @@
 #ifndef LIBREALUVC_BACKEND_H
 #define LIBREALUVC_BACKEND_H
 
-#include "../include/librealuvc/ru.hpp"     // Inherit all type definitions in the public API
+#include "../include/librealuvc/realuvc.h"     // Inherit all type definitions in the public API
 #include <algorithm>
 #include <chrono>
 #include <memory>       // For shared_ptr

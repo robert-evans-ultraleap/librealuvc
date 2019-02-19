@@ -43,14 +43,14 @@ set(RAW_RS_HPP
   ../../src/linux/backend-v4l2.h
   ../../src/linux/backend-hid.h
   ../../src/types.h
-  ../../include/librealuvc/hpp/ru_common.hpp
-  ../../include/librealuvc/hpp/ru_exception.hpp
-  ../../include/librealuvc/hpp/ru_hid.hpp
-  ../../include/librealuvc/hpp/ru_opencv.hpp
-  ../../include/librealuvc/hpp/ru_option.hpp
-  ../../include/librealuvc/hpp/ru_usb.hpp
-  ../../include/librealuvc/hpp/ru_uvc.hpp
-  ../../include/librealuvc/ru.hpp
+  ../../include/librealuvc/realuvc.h
+  ../../include/librealuvc/ru_common.h
+  ../../include/librealuvc/ru_exception.h
+  ../../include/librealuvc/ru_hid.h
+  ../../include/librealuvc/ru_opencv.h
+  ../../include/librealuvc/ru_option.h
+  ../../include/librealuvc/ru_usb.h
+  ../../include/librealuvc/ru_uvc.h
 )
 
 if(${BACKEND} STREQUAL "RS2_USE_LIBUVC_BACKEND")

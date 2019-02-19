@@ -1,8 +1,8 @@
 /* License: Apache 2.0. See LICENSE file in root directory.
    Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
 
- #ifndef LIBREALUVC_RU_EXCEPTION_HPP
- #define LIBREALUVC_RU_EXCEPTION_HPP
+ #ifndef LIBREALUVC_RU_EXCEPTION_H
+ #define LIBREALUVC_RU_EXCEPTION_H 1
  
  #include <exception>
  

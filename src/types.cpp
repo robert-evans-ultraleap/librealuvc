@@ -2,7 +2,7 @@
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
 
 #include "types.h"
-#include <librealuvc/ru.hpp>
+#include <librealuvc/realuvc.h>
 #include <chrono>
 #include <cstdint>
 #include <sstream>

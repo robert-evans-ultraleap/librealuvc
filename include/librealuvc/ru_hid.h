@@ -1,10 +1,10 @@
 // License: Apache 2.0. See LICENSE file in root directory.
 // Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 
-#ifndef LIBREALUVC_RU_HID_HPP
-#define LIBREALUVC_RU_HID_HPP
+#ifndef LIBREALUVC_RU_HID_H
+#define LIBREALUVC_RU_HID_H 1
 
-#include "ru_common.hpp"
+#include "ru_common.h"
 
 namespace librealuvc {
 

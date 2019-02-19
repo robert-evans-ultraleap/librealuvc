@@ -1,8 +1,8 @@
 #ifndef LIBREALUVC_TYPES_H
 #define LIBREALUVC_TYPES_H
 
-#include <librealuvc/hpp/ru_common.hpp>
-#include <librealuvc/hpp/ru_exception.hpp>
+#include <librealuvc/ru_common.h>
+#include <librealuvc/ru_exception.h>
 #include <cassert>
 #include <cstring>
 #include <sstream>

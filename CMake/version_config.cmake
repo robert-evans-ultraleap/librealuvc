@@ -6,11 +6,11 @@
 # for failures should these constants be modified in future      #
 ##################################################################
 function(assign_version_property VER_COMPONENT)
-    file(STRINGS "./include/librealuvc/ru.hpp" REALUVC_VERSION_${VER_COMPONENT} REGEX "#define RU_API_${VER_COMPONENT}_VERSION")
+    file(STRINGS "./include/librealuvc/realuvc.h" REALUVC_VERSION_${VER_COMPONENT} REGEX "#define RU_API_${VER_COMPONENT}_VERSION")
     separate_arguments(REALUVC_VERSION_${VER_COMPONENT})
     list(GET REALUVC_VERSION_${VER_COMPONENT} -1 tmp)
     if (tmp LESS 0)
-        message( FATAL_ERROR "Could not obtain valid Librealuvc version ${VER_COMPONENT} component - actual value is ${tmp}" )
+        message( FATAL_ERROR "Could not obtain valid librealuvc version ${VER_COMPONENT} component - actual value is ${tmp}" )
     endif()
     set(REALUVC_VERSION_${VER_COMPONENT} ${tmp} PARENT_SCOPE)
 endfunction()
