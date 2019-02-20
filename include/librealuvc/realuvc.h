@@ -1,14 +1,15 @@
 /* License: Apache 2.0. See LICENSE file in root directory.
    Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
 
-#ifndef LIBREALUVC_RU_H
-#define LIBREALUVC_RU_H 1
+#ifndef LIBREALUVC_REALUVC_H
+#define LIBREALUVC_REALUVC_H 1
 
 #include "ru_common.h"
 #include "ru_exception.h"
 #include "ru_hid.h"
 #include "ru_usb.h"
 #include "ru_uvc.h"
+#include "ru_videocapture.h"
 
 // These macro definitions are parsed by config_version.cmake
 

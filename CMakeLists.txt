@@ -2,6 +2,8 @@
 cmake_minimum_required(VERSION 3.1.0)
 project(librealuvc LANGUAGES CXX C)
 
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" CACHE PATH "cmake modules" FORCE)
+
 # include librealsense general configuration
 include(CMake/global_config.cmake)
 
@@ -34,6 +36,9 @@ set_target_properties(${LRS_TARGET} PROPERTIES
 )
 
 # add_OpenCV()
+find_package(OpenCV REQUIRED)
+set(DEPENDENCIES librealuvc ${OpenCV_LIBS})
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
@@ -50,11 +55,11 @@ global_target_config()
 add_subdirectory(wrappers)
 
 if(BUILD_EXAMPLES)
-    add_subdirectory(examples)
+  add_subdirectory(examples)
 endif()
 
 if(BUILD_UNIT_TESTS)
-    add_subdirectory(unit-tests)
+  add_subdirectory(unit-tests)
 endif()
 
 include(CMake/install_config.cmake)

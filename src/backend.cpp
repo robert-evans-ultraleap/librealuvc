@@ -24,7 +24,7 @@ shared_ptr<backend> create_backend() {
   return platform::create_backend();
 }
 
-// control_range is declared in <librealuvc/hpp/ru_uvc.hpp>
+// control_range is declared in <librealuvc/ru_uvc.h>
 
 control_range::control_range() { }
 

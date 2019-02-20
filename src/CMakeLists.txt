@@ -22,6 +22,7 @@ target_sources(${LRS_TARGET}
         "${CMAKE_CURRENT_LIST_DIR}/backend.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/log.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/types.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/videocapture.cpp"
 
         "${CMAKE_CURRENT_LIST_DIR}/api.h"
         "${CMAKE_CURRENT_LIST_DIR}/backend.h"

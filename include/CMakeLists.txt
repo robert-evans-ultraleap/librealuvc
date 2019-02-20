@@ -7,4 +7,5 @@ target_sources(${LRS_TARGET}
         "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_option.h"
         "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_usb.h"
         "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_uvc.h"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_videocapture.h"
 )
