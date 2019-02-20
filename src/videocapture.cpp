@@ -32,7 +32,7 @@ VideoCapture::VideoCapture(const cv::String& filename, int api_preference) :
 VideoCapture::~VideoCapture() {
 }
 
-double VideoCapture::get(int prop_id) {
+double VideoCapture::get(int prop_id) const {
   if (is_opencv_) return opencv_->get(prop_id);
   
 }
@@ -43,9 +43,9 @@ bool VideoCapture::grab() {
   return true;
 }
 
-bool VideoCapture::isOpened() {
+bool VideoCapture::isOpened() const {
   if (is_opencv_) return opencv_->isOpened();
-  return is_realcv_;
+  return is_realuvc_;
 }
 
 bool VideoCapture::open(int index) {

@@ -9,6 +9,7 @@
 // be ported with minimal changes.
 
 #include "ru_common.h"
+#include "ru_uvc.h"
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
 
@@ -22,7 +23,7 @@ using std::unique_ptr;
 // When it's an opencv device, it will forward method calls to get
 // the normal cv::VideoCapture behavior.
 
-class VideoCapture : public cv::VideoCapture {
+class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
  protected:
   bool is_opencv_;
   unique_ptr<cv::VideoCapture> opencv_;
