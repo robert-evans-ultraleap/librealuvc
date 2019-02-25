@@ -160,4 +160,10 @@ bool VideoCapture::retrieve(cv::OutputArray image, int flag) {
   return read(image);
 }
 
+bool VideoCapture::set(int prop_id, double val) {
+  if (is_opencv_) return opencv_->set(prop_id, val);
+  // FIXME
+  return false;
+}
+
 } // end librealuvc
