@@ -1,6 +1,7 @@
 target_sources(${LRS_TARGET}
     PRIVATE
         "${CMAKE_CURRENT_LIST_DIR}/librealuvc/realuvc.h"
+        "${CMAKE_CURRENT_LIST_DIR}/librealuvc/realuvc_driver.h"
         "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_common.h"
         "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_exception.h"
         "${CMAKE_CURRENT_LIST_DIR}/librealuvc/ru_hid.h"

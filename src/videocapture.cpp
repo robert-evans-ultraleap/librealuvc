@@ -3,8 +3,52 @@
 
 #include <librealuvc/ru_videocapture.h>
 #include <librealuvc/ru_uvc.h>
+#include <librealuvc/realuvc.h>
+#include <opencv2/core/mat.hpp>
 
 namespace librealuvc {
+
+namespace {
+
+// Support for managing buffer lifetime without copying
+//
+// The cv::Mat's populated
+
+class DevMatAllocator : public cv::MatAllocator {
+ private:
+  cv::MatAllocator* default_alloc_;
+  
+ public:
+  inline DevMatAllocator() :
+    default_alloc_(cv::Mat::getDefaultAllocator()) {
+  }
+  
+  virtual ~DevMatAllocator() { }
+  
+  virtual cv::UMatData* allocate(int dims, const int* sizes, int type, void* data,
+    size_t* step, cv::AccessFlag flags, cv::UMatUsageFlags usage) const {
+    return default_alloc_->allocate(dims, sizes, type, data, step, flags, usage);
+  }
+  
+  virtual bool allocate(cv::UMatData* data, cv::AccessFlag access, cv::UMatUsageFlags usage) const {
+    return default_alloc_->allocate(data, access, usage);
+  }
+
+  virtual void deallocate(cv::UMatData* data) const {
+    //
+  }
+};
+
+DevMatAllocator* get_single_allocator() {
+  static DevMatAllocator single;
+  return &single;
+}
+
+// A realuvc-managed device will pass frame buffers by callback. These will
+// wrapped in a cv::Mat and queued until a VideoCapture::read(), VideoCapture::retrieve(),
+// or being dropped due to queue overflow.
+
+} // end anon
 
 VideoCapture::VideoCapture() :
   is_opencv_(false),
@@ -34,7 +78,7 @@ VideoCapture::~VideoCapture() {
 
 double VideoCapture::get(int prop_id) const {
   if (is_opencv_) return opencv_->get(prop_id);
-  
+  // FIXME
 }
 
 bool VideoCapture::grab() {
@@ -49,7 +93,19 @@ bool VideoCapture::isOpened() const {
 }
 
 bool VideoCapture::open(int index) {
-  
+  auto backend = create_backend();
+  auto info = backend->query_uvc_devices();
+  is_realuvc_ = false;
+  realuvc_.reset();
+  if ((index < 0) || (index >= (int)info.size())) {
+    return false;
+  }
+  realuvc_ = backend->create_uvc_device(info[index]);
+  if (!realuvc_) {
+    return false;
+  }
+  is_realuvc_ = true;
+  return true;
 }
 
 bool VideoCapture::open(const cv::String& filename) {
@@ -80,12 +136,14 @@ VideoCapture& VideoCapture::operator>>(cv::Mat& image) {
 
 VideoCapture& VideoCapture::operator>>(cv::UMat& image) {
   if (is_opencv_) { (*opencv_) >> image; return *this; }
-  read(image);
+  //read(image);
+  assert(0);
   return *this;
 }
 
 bool VideoCapture::read(cv::OutputArray image) {
   if (is_opencv_) return opencv_->read(image);
+  // FIXME
 }
 
 void VideoCapture::release() {
