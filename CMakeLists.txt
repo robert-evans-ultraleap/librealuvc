@@ -40,6 +40,8 @@ find_package(OpenCV REQUIRED)
 set(DEPENDENCIES librealuvc ${OpenCV_LIBS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+add_library(OpenCV SHARED IMPORTED)
+
 include(include/CMakeLists.txt)
 include(src/CMakeLists.txt)
 include(third-party/CMakeLists.txt)

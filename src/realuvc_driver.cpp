@@ -23,6 +23,7 @@ cv::UMatData* DevFrame::allocate(
   size_t* step, cv::AccessFlag flags, cv::UMatUsageFlags usage
 ) const {
   assert(0);
+  return nullptr;
 }
   
 bool DevFrame::allocate(cv::UMatData* data, cv::AccessFlag flags, cv::UMatUsageFlags usage) const {
