@@ -28,12 +28,18 @@ using std::unique_ptr;
 // When it's an opencv device, it will forward method calls to get
 // the normal cv::VideoCapture behavior.
 
+class IVideoStream {
+ public:
+  virtual ~IVideoStream();
+};
+
 class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
  protected:
   bool is_opencv_;
   unique_ptr<cv::VideoCapture> opencv_;
   bool is_realuvc_;
   shared_ptr<librealuvc::uvc_device> realuvc_;
+  shared_ptr<IVideoStream> istream_;
   
  public:
   VideoCapture();

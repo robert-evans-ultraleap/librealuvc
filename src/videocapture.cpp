@@ -5,50 +5,45 @@
 #include <librealuvc/ru_uvc.h>
 #include <librealuvc/realuvc.h>
 #include <opencv2/core/mat.hpp>
+#include <librealuvc/realuvc_driver.h>
 
 namespace librealuvc {
 
 namespace {
 
-// Support for managing buffer lifetime without copying
-//
-// The cv::Mat's populated
-
-class DevMatAllocator : public cv::MatAllocator {
- private:
-  cv::MatAllocator* default_alloc_;
-  
- public:
-  inline DevMatAllocator() :
-    default_alloc_(cv::Mat::getDefaultAllocator()) {
+uint32_t str2fourcc(const char* s) {
+  uint32_t result = 0;
+  for (int j = 0; j < 4; ++j) {
+    uint32_t b = ((int)s[j] & 0xff);
+    result |= (b << 8*(3-j));
   }
-  
-  virtual ~DevMatAllocator() { }
-  
-  virtual cv::UMatData* allocate(int dims, const int* sizes, int type, void* data,
-    size_t* step, cv::AccessFlag flags, cv::UMatUsageFlags usage) const {
-    return default_alloc_->allocate(dims, sizes, type, data, step, flags, usage);
-  }
-  
-  virtual bool allocate(cv::UMatData* data, cv::AccessFlag access, cv::UMatUsageFlags usage) const {
-    return default_alloc_->allocate(data, access, usage);
-  }
-
-  virtual void deallocate(cv::UMatData* data) const {
-    //
-  }
-};
-
-DevMatAllocator* get_single_allocator() {
-  static DevMatAllocator single;
-  return &single;
+  return result;
 }
 
 // A realuvc-managed device will pass frame buffers by callback. These will
-// wrapped in a cv::Mat and queued until a VideoCapture::read(), VideoCapture::retrieve(),
-// or being dropped due to queue overflow.
+// wrapped in a cv::Mat and queued until a VideoCapture::read(), 
+// VideoCapture::retrieve(), or being dropped due to queue overflow.
 
 } // end anon
+
+class VideoStream : public IVideoStream {
+ public:
+  stream_profile profile_;
+  bool is_streaming_;
+  DevFrameQueue queue_;
+  
+ public:
+  VideoStream(int max_size = 1) :
+    is_streaming_(false),
+    queue_(max_size) {
+    profile_.width = 384;
+    profile_.height = 384;
+    profile_.fps = 90;
+    profile_.format = str2fourcc("YUY2");
+  }
+
+  virtual ~VideoStream() { }
+};
 
 VideoCapture::VideoCapture() :
   is_opencv_(false),
@@ -78,7 +73,41 @@ VideoCapture::~VideoCapture() {
 
 double VideoCapture::get(int prop_id) const {
   if (is_opencv_) return opencv_->get(prop_id);
-  // FIXME
+  if (!is_realuvc_) return 0.0;
+  auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
+  switch (prop_id) {
+    // properties which we can handle
+    case cv::CAP_PROP_FRAME_WIDTH:
+      return (double)istream->profile_.width;
+    case cv::CAP_PROP_FRAME_HEIGHT:
+      return (double)istream->profile_.height;
+    case cv::CAP_PROP_FPS:
+      return (double)istream->profile_.fps;
+      break;
+    case cv::CAP_PROP_BRIGHTNESS:
+      break;
+    case cv::CAP_PROP_SATURATION:
+      break;
+    case cv::CAP_PROP_GAIN:
+      break;
+    case cv::CAP_PROP_CONVERT_RGB:
+      break;
+    // properties we will silently ignore
+    case cv::CAP_PROP_POS_MSEC:
+    case cv::CAP_PROP_POS_FRAMES:
+    case cv::CAP_PROP_POS_AVI_RATIO:
+    case cv::CAP_PROP_FOURCC:
+    case cv::CAP_PROP_FRAME_COUNT:
+    case cv::CAP_PROP_FORMAT:
+    case cv::CAP_PROP_MODE:
+    case cv::CAP_PROP_CONTRAST:
+    case cv::CAP_PROP_HUE:
+      return 0.0;
+    // invalid properties
+    default:
+      return 0.0;
+  }
+  return 0.0;
 }
 
 bool VideoCapture::grab() {
@@ -105,6 +134,7 @@ bool VideoCapture::open(int index) {
     return false;
   }
   is_realuvc_ = true;
+  istream_ = std::make_shared<VideoStream>();
   return true;
 }
 
@@ -143,7 +173,32 @@ VideoCapture& VideoCapture::operator>>(cv::UMat& image) {
 
 bool VideoCapture::read(cv::OutputArray image) {
   if (is_opencv_) return opencv_->read(image);
-  // FIXME
+  if (!is_realuvc_) return false;
+  auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
+  if (!istream->is_streaming_) {
+    istream->is_streaming_ = true;
+    auto captured_istream = istream;
+    realuvc_->probe_and_commit(
+      istream->profile_,
+      [captured_istream](stream_profile, frame_object frame, std::function<void()> func) {
+        captured_istream->queue_.push_back(frame, func);
+      }
+    );
+    try {
+      realuvc_->stream_on();
+    } catch (std::exception e) {
+      printf("ERROR: caught exception %s\n", e.what());
+      fflush(stdout);
+    }
+    realuvc_->start_callbacks();
+  }
+  cv::Mat tmp;
+  istream->queue_.pop_front(tmp); // wait for a frame if necessary
+  if (image.needed()) {
+    // OutputArray::assign() will not copy unless it needs to
+    image.assign(tmp);
+  }
+  return true;
 }
 
 void VideoCapture::release() {
@@ -162,7 +217,42 @@ bool VideoCapture::retrieve(cv::OutputArray image, int flag) {
 
 bool VideoCapture::set(int prop_id, double val) {
   if (is_opencv_) return opencv_->set(prop_id, val);
-  // FIXME
+  if (!is_realuvc_) return false;
+  auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
+  switch (prop_id) {
+    // properties which we can handle
+    case cv::CAP_PROP_FRAME_WIDTH:
+      istream->profile_.width = (int)val;
+      return true;
+    case cv::CAP_PROP_FRAME_HEIGHT:
+      istream->profile_.height = (int)val;
+      return true;
+    case cv::CAP_PROP_FPS:
+      istream->profile_.fps = (int)val;
+      break;
+    case cv::CAP_PROP_BRIGHTNESS:
+      break;
+    case cv::CAP_PROP_SATURATION:
+      break;
+    case cv::CAP_PROP_GAIN:
+      break;
+    case cv::CAP_PROP_CONVERT_RGB:
+      break;
+    // properties we will silently ignore
+    case cv::CAP_PROP_POS_MSEC:
+    case cv::CAP_PROP_POS_FRAMES:
+    case cv::CAP_PROP_POS_AVI_RATIO:
+    case cv::CAP_PROP_FOURCC:
+    case cv::CAP_PROP_FRAME_COUNT:
+    case cv::CAP_PROP_FORMAT:
+    case cv::CAP_PROP_MODE:
+    case cv::CAP_PROP_CONTRAST:
+    case cv::CAP_PROP_HUE:
+      return true;
+    // invalid properties
+    default:
+      return false;
+  }
   return false;
 }
 
