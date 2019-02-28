@@ -7,6 +7,12 @@
 #include <opencv2/core/mat.hpp>
 #include <librealuvc/realuvc_driver.h>
 
+#if 0
+#define D(...) { }
+#else
+#define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
+#endif
+
 namespace librealuvc {
 
 namespace {
@@ -17,6 +23,7 @@ uint32_t str2fourcc(const char* s) {
     uint32_t b = ((int)s[j] & 0xff);
     result |= (b << 8*(3-j));
   }
+  D("str2fourcc(\"%s\") -> 0x%x", s, result);
   return result;
 }
 
@@ -36,10 +43,10 @@ class VideoStream : public IVideoStream {
   VideoStream(int max_size = 1) :
     is_streaming_(false),
     queue_(max_size) {
-    profile_.width = 384;
-    profile_.height = 384;
-    profile_.fps = 90;
-    profile_.format = str2fourcc("YUY2");
+    profile_.width = 640;
+    profile_.height = 480;
+    profile_.fps = 15;
+    profile_.format = str2fourcc(/*"YUY2"*/ "I420");
   }
 
   virtual ~VideoStream() { }
@@ -92,11 +99,13 @@ double VideoCapture::get(int prop_id) const {
       break;
     case cv::CAP_PROP_CONVERT_RGB:
       break;
+    case cv::CAP_PROP_FOURCC:
+      return (double)istream->profile_.format;
+      break;
     // properties we will silently ignore
     case cv::CAP_PROP_POS_MSEC:
     case cv::CAP_PROP_POS_FRAMES:
     case cv::CAP_PROP_POS_AVI_RATIO:
-    case cv::CAP_PROP_FOURCC:
     case cv::CAP_PROP_FRAME_COUNT:
     case cv::CAP_PROP_FORMAT:
     case cv::CAP_PROP_MODE:
@@ -135,6 +144,7 @@ bool VideoCapture::open(int index) {
   }
   is_realuvc_ = true;
   istream_ = std::make_shared<VideoStream>();
+  realuvc_->set_power_state(D0);
   return true;
 }
 
@@ -176,22 +186,33 @@ bool VideoCapture::read(cv::OutputArray image) {
   if (!is_realuvc_) return false;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   if (!istream->is_streaming_) {
-    istream->is_streaming_ = true;
+    D("profile width %d, height %d, fps %d, format 0x%x",
+      istream->profile_.width, istream->profile_.height,
+      istream->profile_.fps, istream->profile_.format);
+    D("probe_and_commit() ...");
     auto captured_istream = istream;
     realuvc_->probe_and_commit(
       istream->profile_,
       [captured_istream](stream_profile, frame_object frame, std::function<void()> func) {
         captured_istream->queue_.push_back(frame, func);
-      }
+      },
+      4
     );
+    
     try {
+      D("stream_on() ...");
       realuvc_->stream_on();
+      D("stream_on() done");
+      D("start_callbacks() ...");
+      realuvc_->start_callbacks();
+      D("start_callbacks() done");
+      istream->is_streaming_ = true;
     } catch (std::exception e) {
       printf("ERROR: caught exception %s\n", e.what());
-      fflush(stdout);
+      fflush(stdout);      
     }
-    realuvc_->start_callbacks();
   }
+  if (!istream->is_streaming_) return false;
   cv::Mat tmp;
   istream->queue_.pop_front(tmp); // wait for a frame if necessary
   if (image.needed()) {

@@ -34,6 +34,7 @@ The library will be compiled without the metadata support!\n")
 #include <vidcap.h>
 #include <ksmedia.h>    // Metadata Extension
 #include <Mferror.h>
+#include <cstdio>
 
 #pragma comment(lib, "Shlwapi.lib")
 #pragma comment(lib, "mf.lib")
@@ -1035,6 +1036,11 @@ namespace librealuvc
                     CHECK_HR(pMediaType->GetGUID(MF_MT_SUBTYPE, &subtype));
 
                     uint32_t device_fourcc = reinterpret_cast<const big_endian<uint32_t> &>(subtype.Data1);
+                    
+                    char fourcc_str[8];
+                    for (int j = 0; j < 4; ++j) fourcc_str[j] = (device_fourcc >> (24-8*j)) & 0xff;
+                    fourcc_str[4] = 0;
+                    printf("DEBUG: profile[%d] device_fourcc 0x%x \"%s\"\n", k, device_fourcc, fourcc_str);
 
                     if (device_fourcc != profile.format &&
                         (fourcc_map.count(device_fourcc) == 0 ||
@@ -1045,6 +1051,8 @@ namespace librealuvc
                     unsigned int height;
 
                     CHECK_HR(MFGetAttributeSize(pMediaType, MF_MT_FRAME_SIZE, &width, &height));
+                    
+                    printf("DEBUG: profile[%d] width %u height %u\n", k, width, height);
 
                     typedef struct frameRate {
                         unsigned int denominator;
@@ -1056,6 +1064,12 @@ namespace librealuvc
 
                     CHECK_HR(MFGetAttributeRatio(pMediaType, MF_MT_FRAME_RATE_RANGE_MIN, &frameRateMin.numerator, &frameRateMin.denominator));
                     CHECK_HR(MFGetAttributeRatio(pMediaType, MF_MT_FRAME_RATE_RANGE_MAX, &frameRateMax.numerator, &frameRateMax.denominator));
+                    
+                    printf("DEBUG: profile[%d] fpsMin %.1f fpsMax %.1f\n", 
+                      k,
+                      (1.0*frameRateMin.numerator)/frameRateMin.denominator,
+                      (1.0*frameRateMax.numerator)/frameRateMax.denominator
+                    );
 
                     if ((width == profile.width) && (height == profile.height))
                     {

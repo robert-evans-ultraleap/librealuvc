@@ -1,2 +1,4 @@
 #!/bin/bash
-/k/rcownie/librealuvc-build/Release/mytest.exe
+LRU=/d/rcownie/librealuvc-build
+export PATH="/d/Libraries-x64_vc141/opencv-4.0/x64/vc15/bin:${LRU}/Release:${PATH}"
+/d/rcownie/librealuvc-build/Release/mytest.exe
