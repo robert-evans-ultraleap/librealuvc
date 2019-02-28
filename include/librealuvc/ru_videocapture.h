@@ -30,7 +30,7 @@ using std::unique_ptr;
 
 class IVideoStream {
  public:
-  virtual ~IVideoStream();
+  virtual ~IVideoStream() { }
 };
 
 class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
