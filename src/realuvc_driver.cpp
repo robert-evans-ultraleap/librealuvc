@@ -201,15 +201,15 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   front_ = ((front + 1) % max_size_);
   --size_;
   cv::UMatData* data = f;
-  D("pop_front DevFrame %p", f);
+  D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
   cv::Mat m;
   D("A");
   m.allocator = &single_alloc;
-  m.cols = f->profile_.height;
+  m.cols = f->profile_.width;
   m.data = (uchar*)f->frame_.pixels;
   m.dims = 2;
   // m.flags ?
-  m.rows = f->profile_.width;
+  m.rows = f->profile_.height;
   m.step = m.cols;
   D("B");
   m.u = data;
