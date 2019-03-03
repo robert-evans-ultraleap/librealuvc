@@ -45,7 +45,7 @@ class VideoStream : public IVideoStream {
     queue_(max_size) {
     profile_.width = 640;
     profile_.height = 480;
-    profile_.fps = 15;
+    profile_.fps = 30;
     profile_.format = str2fourcc(/*"YUY2"*/ "I420");
   }
 
@@ -193,8 +193,8 @@ bool VideoCapture::read(cv::OutputArray image) {
     auto captured_istream = istream;
     realuvc_->probe_and_commit(
       istream->profile_,
-      [captured_istream](stream_profile, frame_object frame, std::function<void()> func) {
-        captured_istream->queue_.push_back(frame, func);
+      [captured_istream](stream_profile profile, frame_object frame, std::function<void()> func) {
+        captured_istream->queue_.push_back(profile, frame, func);
       },
       4
     );

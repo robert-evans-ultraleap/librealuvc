@@ -1,6 +1,12 @@
 #include <librealuvc/realuvc_driver.h>
 #include <condition_variable>
 
+#if 0
+#define D(...) { }
+#else
+#define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
+#endif
+
 namespace librealuvc {
 
 namespace {
@@ -46,6 +52,7 @@ class DevMatAllocator : public cv::MatAllocator {
   // deallocate() is the only method with non-default behavior
   
   virtual void deallocate(cv::UMatData* data) const {
+    D("deallocate(umatdata %p) DevFrame %p", data, data->handle);
     DevFrame* f = (DevFrame*)data->handle;
     data->handle = nullptr;
     if (f) delete f;
@@ -70,8 +77,12 @@ class DevMatAllocator : public cv::MatAllocator {
   }
   
   virtual void unmap(cv::UMatData* data) const {
-    auto alloc = cv::Mat::getDefaultAllocator();
-    alloc->unmap(data);
+    // From reading the source code of OpenCV, it turns out that unmap()
+    // is the method called when the refcount goes to zero.
+    D("unmap(umatdata %p) DevFrame %p", data, data->handle);
+    DevFrame* f = (DevFrame*)data->handle;
+    data->handle = nullptr;
+    if (f) delete f;
   }
 
   virtual void upload(
@@ -89,8 +100,13 @@ DevMatAllocator single_alloc;
 
 // DevFrame methods
 
-DevFrame::DevFrame(const frame_object& frame, const std::function<void()>& release_func) :
+DevFrame::DevFrame(
+  const stream_profile& profile,
+  const frame_object& frame,
+  const std::function<void()>& release_func
+) :
   cv::UMatData(&single_alloc),
+  profile_(profile),
   frame_(frame),
   release_func_(release_func),
   is_released_(false) {
@@ -124,11 +140,15 @@ void DevFrameQueue::drop_front_locked() {
   delete f;
 }
   
-void DevFrameQueue::push_back(const frame_object& frame, const std::function<void()>& release_func) {
+void DevFrameQueue::push_back(
+  const stream_profile& profile,
+  const frame_object& frame,
+  const std::function<void()>& release_func
+) {
   std::unique_lock<std::mutex> lock(mutex_);
   while (size_ >= max_size_) drop_front_locked();
   size_t back = ((front_ + size_) % max_size_);
-  queue_[back] = new DevFrame(frame, release_func);
+  queue_[back] = new DevFrame(profile, frame, release_func);
   ++size_;
   if (num_sleepers_ > 0) {
     --num_sleepers_;
@@ -149,6 +169,7 @@ void print_mat(const char* what, const cv::Mat& mat) {
   }
   printf("  step %ld\n", (long)mat.step);
   printf("  umatdata %p\n", mat.u);
+  fflush(stdout);
   auto u = mat.u;
   if (!u) return;
   printf("    allocatorFlags_ 0x%08x\n", u->allocatorFlags_);
@@ -165,6 +186,7 @@ void print_mat(const char* what, const cv::Mat& mat) {
   printf("    urefcount %d\n", u->urefcount);
   printf("    userdata %p\n", u->userdata);
   printf("\n");
+  fflush(stdout);
 }
   
 void DevFrameQueue::pop_front(cv::Mat& mat) {
@@ -173,14 +195,32 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
     ++num_sleepers_;
     wakeup_.wait(lock);
   }
-  size_t back = ((front_ + size_) % max_size_);
+  size_t front = front_;
+  DevFrame* f = queue_[front];
+  queue_[front] = nullptr;
+  front_ = ((front + 1) % max_size_);
   --size_;
-  DevFrame* f = queue_[back];
-  queue_[back] = nullptr;
   cv::UMatData* data = f;
-  cv::Mat tmp((int)f->frame_.frame_size, 1, CV_8UC1, *(const cv::Scalar*)f->frame_.pixels);
-  print_mat("tmp", tmp);
-  mat = tmp;
+  D("pop_front DevFrame %p", f);
+  cv::Mat m;
+  D("A");
+  m.allocator = &single_alloc;
+  m.cols = f->profile_.height;
+  m.data = (uchar*)f->frame_.pixels;
+  m.dims = 2;
+  // m.flags ?
+  m.rows = f->profile_.width;
+  m.step = m.cols;
+  D("B");
+  m.u = data;
+  data->data = m.data;
+  data->refcount = 1;
+  data->size = 1;
+  D("C");
+  print_mat("m", m);
+  D("D");
+  mat = m;
+  D("E");
 }
 
 } // end librealuvc
