@@ -46,7 +46,7 @@ class VideoStream : public IVideoStream {
     profile_.width = 640;
     profile_.height = 480;
     profile_.fps = 30;
-    profile_.format = str2fourcc(/*"YUY2"*/ "I420");
+    profile_.format = str2fourcc("YUY2" /* "I420" */);
   }
 
   virtual ~VideoStream() { }

@@ -203,7 +203,6 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   cv::UMatData* data = f;
   D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
   cv::Mat m;
-  D("A");
   m.allocator = &single_alloc;
   m.cols = f->profile_.width;
   m.data = (uchar*)f->frame_.pixels;
@@ -211,16 +210,12 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   // m.flags ?
   m.rows = f->profile_.height;
   m.step = m.cols;
-  D("B");
   m.u = data;
   data->data = m.data;
   data->refcount = 1;
   data->size = 1;
-  D("C");
-  print_mat("m", m);
-  D("D");
+  //print_mat("m", m);
   mat = m;
-  D("E");
 }
 
 } // end librealuvc

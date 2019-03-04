@@ -22,7 +22,7 @@ int do_stuff() {
   D("cap.open(0) -> %s", ok ? "true" : "false");
   cap.set(cv::CAP_PROP_FRAME_WIDTH,  640);
   cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-  cap.set(cv::CAP_PROP_FPS, 30.0);
+  cap.set(cv::CAP_PROP_FPS, 45.0);
   cv::Mat mat;
   while (1) {
     ok = cap.read(mat);
