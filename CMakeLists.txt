@@ -22,18 +22,13 @@ os_set_flags()
 global_set_flags()
 
 if(BUILD_SHARED_LIBS)
+  message(STATUS "add_library(${LRS_TARGET} SHARED)")
   add_library(${LRS_TARGET} SHARED "")
 endif()
 if(BUILD_STATIC_LIBS)
+  message(STATUS "add_library(${LRS_TARGET}_static STATIC)")
   add_library(${LRS_TARGET}_static STATIC "")
 endif()
-
-# set library version
-set_target_properties(${LRS_TARGET} PROPERTIES
-  WINDOWS_EXPORT_ALL_SYMBOLS ON
-  VERSION ${REALUVC_VERSION_STRING}
-  SOVERSION ${REALUVC_VERSION_MAJOR}
-)
 
 # add_OpenCV()
 find_package(OpenCV REQUIRED)
@@ -42,17 +37,24 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_library(OpenCV SHARED IMPORTED)
 
-include(include/CMakeLists.txt)
-include(src/CMakeLists.txt)
-include(third-party/CMakeLists.txt)
+# global project configuration
+# macro definition located at "CMake/global_config.cmake"
+global_target_config()
 
 # configure the project according to OS specific requirments
 # macro definition located at "CMake/<OS>_config.cmake"
 os_target_config()
 
-# global project configuration
-# macro definition located at "CMake/global_config.cmake"
-global_target_config()
+include(include/CMakeLists.txt)
+include(src/CMakeLists.txt)
+include(third-party/CMakeLists.txt)
+
+# set library version
+set_target_properties(${LRS_TARGET} PROPERTIES
+  WINDOWS_EXPORT_ALL_SYMBOLS ON
+  VERSION ${REALUVC_VERSION_STRING}
+  SOVERSION ${REALUVC_VERSION_MAJOR}
+)
 
 add_subdirectory(wrappers)
 
