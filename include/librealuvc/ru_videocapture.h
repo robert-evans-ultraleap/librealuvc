@@ -38,6 +38,8 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   bool is_opencv_;
   unique_ptr<cv::VideoCapture> opencv_;
   bool is_realuvc_;
+  int vendor_id_;
+  int product_id_;
   shared_ptr<librealuvc::uvc_device> realuvc_;
   shared_ptr<IVideoStream> istream_;
   
@@ -64,6 +66,15 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   virtual void release();
   virtual bool retrieve(cv::OutputArray image, int flag = 0);
   virtual bool set(int propId, double value);
+
+  // Does it support extended functionality through librealuvc ?
+  virtual bool is_extended() const;
+  
+  virtual int get_vendor_id() const;
+  virtual int get_product_id() const;
+  
+  virtual bool get_xu(int ctrl, void* data, int len);
+  virtual bool set_xu(int ctrl, const void* data, int len);
 };
   
 } // end librealuvc

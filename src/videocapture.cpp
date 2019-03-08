@@ -143,6 +143,8 @@ bool VideoCapture::open(int index) {
     return false;
   }
   is_realuvc_ = true;
+  vendor_id_ = info[index].vid;
+  product_id_ = info[index].pid;
   istream_ = std::make_shared<VideoStream>();
   realuvc_->set_power_state(D0);
   return true;
@@ -274,6 +276,26 @@ bool VideoCapture::set(int prop_id, double val) {
     default:
       return false;
   }
+  return false;
+}
+
+bool VideoCapture::is_extended() const {
+  return is_realuvc_;
+}
+
+int VideoCapture::get_vendor_id() const {
+  return (is_realuvc_ ? vendor_id_ : 0);
+}
+
+int VideoCapture::get_product_id() const {
+  return (is_realuvc_ ? product_id_ : 0);
+}
+
+bool VideoCapture::get_xu(int ctrl, void* data, int len) {
+  return false;
+}
+
+bool VideoCapture::set_xu(int ctrl, const void* data, int len) {
   return false;
 }
 
