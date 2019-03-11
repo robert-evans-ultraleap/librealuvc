@@ -208,11 +208,14 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   m.data = (uchar*)f->frame_.pixels;
   m.dims = 2;
   // m.flags ?
-  // kludge for Leap devices
+  // Leap Motion devices pretend to be giving frames in YUY2 format
+  // (4 bytes for 2 pixels), but it's really 8bit grayscale with
+  // each row containing both the L and R rows.
+  //
   int fourcc_YUY2 = 0x59555932;
   m.rows = f->profile_.height;
   if ((f->profile_.format == fourcc_YUY2) &&
-      (f->frame_.frame_size >= 2*m.cols*m.rows)) {
+      (f->frame_.frame_size == 2*m.cols*m.rows)) {
     m.cols *= 2;
   }
   m.step = m.cols;
