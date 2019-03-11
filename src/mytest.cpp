@@ -18,11 +18,11 @@ int nframe;
 int do_stuff() {
   bool ok;
   librealuvc::VideoCapture cap;
-  int camera_id = 1;
+  int camera_id = 0;
   ok = cap.open(camera_id);
   D("cap.open(%d) -> %s", camera_id, ok ? "true" : "false");
   if (!cap.is_extended()) {
-    D("camera_id %d is an opencv device\n"); 
+    D("camera_id %d is an opencv device\n", camera_id); 
   } else {
     int vendor_id = cap.get_vendor_id();
     int product_id = cap.get_product_id();

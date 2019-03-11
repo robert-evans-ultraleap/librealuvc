@@ -84,6 +84,8 @@ double VideoCapture::get(int prop_id) const {
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   switch (prop_id) {
     // properties which we can handle
+    case cv::CAP_PROP_FOURCC:
+      return (double)istream->profile_.format;
     case cv::CAP_PROP_FRAME_WIDTH:
       return (double)istream->profile_.width;
     case cv::CAP_PROP_FRAME_HEIGHT:
@@ -98,9 +100,6 @@ double VideoCapture::get(int prop_id) const {
     case cv::CAP_PROP_GAIN:
       break;
     case cv::CAP_PROP_CONVERT_RGB:
-      break;
-    case cv::CAP_PROP_FOURCC:
-      return (double)istream->profile_.format;
       break;
     // properties we will silently ignore
     case cv::CAP_PROP_POS_MSEC:
@@ -244,6 +243,9 @@ bool VideoCapture::set(int prop_id, double val) {
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   switch (prop_id) {
     // properties which we can handle
+    case cv::CAP_PROP_FOURCC:
+      istream->profile_.format = (int)val;
+      return true;
     case cv::CAP_PROP_FRAME_WIDTH:
       istream->profile_.width = (int)val;
       return true;
@@ -265,7 +267,6 @@ bool VideoCapture::set(int prop_id, double val) {
     case cv::CAP_PROP_POS_MSEC:
     case cv::CAP_PROP_POS_FRAMES:
     case cv::CAP_PROP_POS_AVI_RATIO:
-    case cv::CAP_PROP_FOURCC:
     case cv::CAP_PROP_FRAME_COUNT:
     case cv::CAP_PROP_FORMAT:
     case cv::CAP_PROP_MODE:

@@ -1,7 +1,7 @@
 #include <librealuvc/realuvc_driver.h>
 #include <condition_variable>
 
-#if 0
+#if 1
 #define D(...) { }
 #else
 #define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
@@ -201,14 +201,20 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   front_ = ((front + 1) % max_size_);
   --size_;
   cv::UMatData* data = f;
-  D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
+  //D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
   cv::Mat m;
   m.allocator = &single_alloc;
   m.cols = f->profile_.width;
   m.data = (uchar*)f->frame_.pixels;
   m.dims = 2;
   // m.flags ?
+  // kludge for Leap devices
+  int fourcc_YUY2 = 0x59555932;
   m.rows = f->profile_.height;
+  if ((f->profile_.format == fourcc_YUY2) &&
+      (f->frame_.frame_size >= 2*m.cols*m.rows)) {
+    m.cols *= 2;
+  }
   m.step = m.cols;
   m.u = data;
   data->data = m.data;
