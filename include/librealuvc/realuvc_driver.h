@@ -35,18 +35,25 @@ class DevFrame : public cv::UMatData {
   ~DevFrame();
 };
 
+enum DevFrameFixup {
+  FIXUP_NORMAL,
+  FIXUP_GRAY8_PIX_L_PIX_R,
+  FIXUP_GRAY8_ROW_L_ROW_R
+};
+
 class DevFrameQueue {
  private:
   std::mutex mutex_;
   std::condition_variable wakeup_;
   int num_sleepers_;
+  DevFrameFixup fixup_;
   size_t max_size_;
   size_t size_;
   size_t front_;
   vector<DevFrame*> queue_;
  
  public:
-  DevFrameQueue(size_t max_size = 1);
+  DevFrameQueue(DevFrameFixup fixup, size_t max_size = 1);
   
   ~DevFrameQueue();
   

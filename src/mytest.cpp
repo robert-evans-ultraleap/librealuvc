@@ -24,24 +24,32 @@ uint32_t str2fourcc(const char* s) {
 
 int nframe;
 
-#define VENDOR_LEAPMOTION 0x2936
-#define VENDOR_MSI        0x5986
-#define VENDOR_LOGITECH   0x046d
+#define VENDOR_LEAPMOTION  0x2936
+#define VENDOR_MSI         0x5986
+#define VENDOR_LOGITECH    0x046d
+#define VENDOR_PERIPHERAL  0xf182
 
-#define PRODUCT_GS63CAM   0x0547
-#define PRODUCT_C905      0x080a
+#define PRODUCT_GS63CAM    0x0547
+#define PRODUCT_C905       0x080a
+#define PRODUCT_PERIPHERAL 0x0003
 
 int do_stuff() {
   bool ok;
+  int camera_id = -1;
   librealuvc::VideoCapture cap;
   for (int id = 0; id < 2; ++id) {
     ok = cap.open(id);
     if (ok) {
       D("camera_id %d vendor 0x%04x product 0x%04x", 
         id, cap.get_vendor_id(), cap.get_product_id());
+      if ((camera_id < 0) && (
+            (cap.get_vendor_id() == VENDOR_LEAPMOTION) ||
+            (cap.get_vendor_id() == VENDOR_PERIPHERAL)
+          )) {
+        camera_id = id;
+      }
     }
   }
-  int camera_id = 1;
   ok = cap.open(camera_id);
   D("cap.open(%d) -> %s", camera_id, ok ? "true" : "false");
   int vendor_id = 0;
@@ -60,6 +68,12 @@ int do_stuff() {
       cap.set(cv::CAP_PROP_FRAME_WIDTH, 384);
       cap.set(cv::CAP_PROP_FRAME_HEIGHT, 384);
       cap.set(cv::CAP_PROP_FPS, 90.0);
+      break;
+    case VENDOR_PERIPHERAL:
+      cap.set(cv::CAP_PROP_FOURCC, str2fourcc("YUY2"));
+      cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
+      cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+      cap.set(cv::CAP_PROP_FPS, 57.5);
       break;
     case VENDOR_LOGITECH:
       cap.set(cv::CAP_PROP_FOURCC, str2fourcc("I420"));

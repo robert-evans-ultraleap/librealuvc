@@ -40,9 +40,9 @@ class VideoStream : public IVideoStream {
   DevFrameQueue queue_;
   
  public:
-  VideoStream(int max_size = 1) :
+  VideoStream(DevFrameFixup fixup, int max_size = 1) :
     is_streaming_(false),
-    queue_(max_size) {
+    queue_(fixup, max_size) {
     profile_.width = 640;
     profile_.height = 480;
     profile_.fps = 30;
@@ -129,6 +129,9 @@ bool VideoCapture::isOpened() const {
   return is_realuvc_;
 }
 
+// The images from Leap Motion devices are encoded in non-standard
+// ways, but we'll fix them up in realuvc_driver.cpp
+
 bool VideoCapture::open(int index) {
   auto backend = create_backend();
   auto info = backend->query_uvc_devices();
@@ -144,7 +147,14 @@ bool VideoCapture::open(int index) {
   is_realuvc_ = true;
   vendor_id_ = info[index].vid;
   product_id_ = info[index].pid;
-  istream_ = std::make_shared<VideoStream>();
+  // Kludge for the weird frame formats returned by Leap Peripheral/Rigel
+  DevFrameFixup fixup = FIXUP_NORMAL;
+  if ((vendor_id_ == 0xf182) && (product_id_ == 0x0003)) { // Leap Peripheral
+    fixup = FIXUP_GRAY8_PIX_L_PIX_R;
+  } else if (vendor_id_ == 0x2936)  { // Leap Rigel
+    fixup = FIXUP_GRAY8_ROW_L_ROW_R;
+  }
+  istream_ = std::make_shared<VideoStream>(fixup);
   realuvc_->set_power_state(D0);
   return true;
 }

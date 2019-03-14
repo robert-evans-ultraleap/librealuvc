@@ -79,7 +79,7 @@ class DevMatAllocator : public cv::MatAllocator {
   virtual void unmap(cv::UMatData* data) const {
     // From reading the source code of OpenCV, it turns out that unmap()
     // is the method called when the refcount goes to zero.
-    D("unmap(umatdata %p) DevFrame %p", data, data->handle);
+    // D("unmap(umatdata %p) DevFrame %p", data, data->handle);
     DevFrame* f = (DevFrame*)data->handle;
     data->handle = nullptr;
     if (f) delete f;
@@ -119,7 +119,8 @@ DevFrame::~DevFrame() {
   
 // DevFrameQueue methods
 
-DevFrameQueue::DevFrameQueue(size_t max_size) {
+DevFrameQueue::DevFrameQueue(DevFrameFixup fixup, size_t max_size) {
+  fixup_ = fixup;
   num_sleepers_ = 0;
   if (max_size < 1) max_size = 1;
   max_size_ = max_size;
@@ -201,29 +202,57 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   front_ = ((front + 1) % max_size_);
   --size_;
   cv::UMatData* data = f;
-  //D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
+  // D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
   cv::Mat m;
   m.allocator = &single_alloc;
   m.cols = f->profile_.width;
+  m.rows = f->profile_.height;
   m.data = (uchar*)f->frame_.pixels;
   m.dims = 2;
   // m.flags ?
   // Leap Motion devices pretend to be giving frames in YUY2 format
   // (4 bytes for 2 pixels), but it's really 8bit grayscale with
   // each row containing both the L and R rows.
-  //
   int fourcc_YUY2 = 0x59555932;
+  switch (fixup_) {
+    case FIXUP_NORMAL:
+      // The frame is just fine, do nothing
+      // WARNING: this works for I420 format which starts with complete Y-plane
+      break;
+    case FIXUP_GRAY8_PIX_L_PIX_R: {
+      // We need to rearrange the data within each row
+      int halfcols = m.cols;
+      m.cols *= 2;
+      std::vector<uchar> halfrow(halfcols);
+      uchar* src = m.data;
+      for (int row = 0; row < m.rows; ++row) {
+        uchar* final_R = (src + halfcols);
+        uchar* srclim = (src + m.cols);
+        uchar* dst_L = src;
+        uchar* dst_R = &halfrow[0];
+        for (; src < srclim; src += 2) {
+          *dst_L++ = src[0];
+          *dst_R++ = src[1];
+        }
+        memcpy(final_R, &halfrow[0], halfcols*sizeof(uchar));
+      }
+      break;
+    }
+    case FIXUP_GRAY8_ROW_L_ROW_R:
+      // The data layout is fine, but it's 8-bit pixels not 16-bit
+      m.cols *= 2;
+      break;
+  }
   m.rows = f->profile_.height;
   if ((f->profile_.format == fourcc_YUY2) &&
       (f->frame_.frame_size == 2*m.cols*m.rows)) {
-    m.cols *= 2;
+    // m.cols *= 2;
   }
-  m.step = m.cols;
+  m.step = m.cols * sizeof(uint8_t);
   m.u = data;
   data->data = m.data;
   data->refcount = 1;
   data->size = 1;
-  //print_mat("m", m);
   mat = m;
 }
 
