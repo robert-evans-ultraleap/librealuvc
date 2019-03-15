@@ -1,0 +1,12 @@
+@PACKAGE_INIT@
+
+set(librealuvc_VERSION_MAJOR "0")
+set(librealuvc_VERSION_MINOR "1")
+set(librealuvc_VERSION_PATCH "1")
+
+set(librealuvc_VERSION ${librealuvc_VERSION_MAJOR}.${librealuvc_VERSION_MINOR}.${librealuvc_VERSION_PATCH})
+
+set_and_check(librealuvc_INCLUDE_DIR "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+
+include("${CMAKE_CURRENT_LIST_DIR}/librealuvcTargets.cmake")
+set(librealuvc_LIBRARY librealuvc::librealuvc)

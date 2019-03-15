@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/videoio.hpp>
+#include <opencv2/imgproc.hpp>
 #include <cstdio>
 
 #if 0
@@ -33,6 +34,38 @@ int nframe;
 #define PRODUCT_C905       0x080a
 #define PRODUCT_PERIPHERAL 0x0003
 
+void show_blowup(const cv::Mat& mat) {
+  // Show small region around brightest pixel
+  static int old_x = 0;
+  static int old_y = 0;
+  uint8_t brightest = 0;
+  int best_row = 0;
+  int best_col = 0;
+  for (int row = 0; row < mat.rows; ++row) {
+    const uint8_t* p = mat.ptr(row);
+    for (int col = 0; col < mat.cols/2; ++col) {
+      if (brightest < p[col]) {
+        brightest = p[col];
+        best_row = row;
+        best_col = col;
+      }
+    }
+  }
+  printf("brightest %3d at %3d, %3d\n", brightest, best_col, best_row);
+  int dx = 64;
+  int dy = 64;
+  int xlo = best_col-dx/2;
+  int ylo = best_row-dy/2;
+  if (xlo < 0) xlo = 0; else if (xlo > mat.cols-1-dx) xlo = mat.cols-1-dx;
+  if (ylo < 0) ylo = 0; else if (ylo > mat.rows-1-dy) ylo = mat.rows-1-dy;
+  if (xlo >= old_x+4) old_x += 4; else if (xlo <= old_x-4) old_x -= 4;
+  if (ylo >= old_y+4) old_y += 4; else if (ylo <= old_y-4) old_y -= 4;
+  cv::Mat tmp(mat, cv::Rect(old_x, old_y, dx, dy));
+  cv::Mat blowup;
+  cv::resize(tmp, blowup, cv::Size(), 16.0, 16.0, cv::INTER_NEAREST);
+  cv::imshow("blowup", blowup);
+}
+
 int do_stuff() {
   bool ok;
   int camera_id = -1;
@@ -42,11 +75,10 @@ int do_stuff() {
     if (ok) {
       D("camera_id %d vendor 0x%04x product 0x%04x", 
         id, cap.get_vendor_id(), cap.get_product_id());
-      if ((camera_id < 0) && (
-            (cap.get_vendor_id() == VENDOR_LEAPMOTION) ||
-            (cap.get_vendor_id() == VENDOR_PERIPHERAL)
-          )) {
-        camera_id = id;
+      camera_id = id;
+      if ((cap.get_vendor_id() == VENDOR_LEAPMOTION) ||
+          (cap.get_vendor_id() == VENDOR_PERIPHERAL)) {
+        break;
       }
     }
   }
@@ -99,6 +131,7 @@ int do_stuff() {
       break;
     }
     cv::imshow("Camera_LR", mat);
+    show_blowup(mat);
     int c = (int)cv::waitKey(1);
     if ((c == 27) || (c == 'q')) break; // <ESC> or 'q' key
   }
