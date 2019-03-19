@@ -58,8 +58,8 @@ void show_blowup(const cv::Mat& mat) {
   int ylo = best_row-dy/2;
   if (xlo < 0) xlo = 0; else if (xlo > mat.cols-1-dx) xlo = mat.cols-1-dx;
   if (ylo < 0) ylo = 0; else if (ylo > mat.rows-1-dy) ylo = mat.rows-1-dy;
-  if (xlo >= old_x+4) old_x += 4; else if (xlo <= old_x-4) old_x -= 4;
-  if (ylo >= old_y+4) old_y += 4; else if (ylo <= old_y-4) old_y -= 4;
+  if (xlo >= old_x+16) old_x += 16; else if (xlo <= old_x-16) old_x -= 16;
+  if (ylo >= old_y+16) old_y += 16; else if (ylo <= old_y-16) old_y -= 16;
   cv::Mat tmp(mat, cv::Rect(old_x, old_y, dx, dy));
   cv::Mat blowup;
   cv::resize(tmp, blowup, cv::Size(), 16.0, 16.0, cv::INTER_NEAREST);
@@ -124,14 +124,16 @@ int do_stuff() {
       exit(1);
   }
   cv::Mat mat;
-  while (1) {
+  for (int count = 0;; ++count) {
     ok = cap.read(mat);
     if (!ok) {
       D("cap.read() fail\n");
       break;
     }
     cv::imshow("Camera_LR", mat);
-    show_blowup(mat);
+    if ((count % 100) == 0) {
+      show_blowup(mat);
+    }
     int c = (int)cv::waitKey(1);
     if ((c == 27) || (c == 'q')) break; // <ESC> or 'q' key
   }
