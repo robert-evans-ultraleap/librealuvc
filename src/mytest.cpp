@@ -51,15 +51,26 @@ void show_blowup(const cv::Mat& mat) {
       }
     }
   }
-  printf("brightest %3d at %3d, %3d\n", brightest, best_col, best_row);
+  printf("DEBUG: brightest %3d at %3d, %3d\n", brightest, best_col, best_row);
+  fflush(stdout);
   int dx = 64;
   int dy = 64;
   int xlo = best_col-dx/2;
   int ylo = best_row-dy/2;
   if (xlo < 0) xlo = 0; else if (xlo > mat.cols-1-dx) xlo = mat.cols-1-dx;
   if (ylo < 0) ylo = 0; else if (ylo > mat.rows-1-dy) ylo = mat.rows-1-dy;
-  if (xlo >= old_x+16) old_x += 16; else if (xlo <= old_x-16) old_x -= 16;
-  if (ylo >= old_y+16) old_y += 16; else if (ylo <= old_y-16) old_y -= 16;
+  int move_x = (xlo - old_x);
+  int move_y = (ylo - old_y);
+  if ((-4 <= move_x) && (move_x <= +4) && (-4 <= move_y) && (move_y <= +4)) {
+    // don't track small move
+  } else {
+    // jump at most half a frame
+    int far = (dx/2);
+    if (move_x < -far) move_x = -far; else if (move_x > +far) move_x = +far;
+    if (move_y < -far) move_y = -far; else if (move_y > +far) move_y = +far;
+    old_x += move_x;
+    old_y += move_y;
+  }
   cv::Mat tmp(mat, cv::Rect(old_x, old_y, dx, dy));
   cv::Mat blowup;
   cv::resize(tmp, blowup, cv::Size(), 16.0, 16.0, cv::INTER_NEAREST);
