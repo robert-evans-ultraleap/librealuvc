@@ -8,14 +8,18 @@ try:
     from scipy.optimize import curve_fit
 except:
     print("ERROR LOADING MODULES: Ensure 'numpy', 'opencv-python', and 'scipy' are installed.")
+#try:
+import pyrealuvc
+#except:
+#    print("ERROR: failed to load module 'pyrealuvc'")
 
 class leapImageThread(threading.Thread):
     '''A dedicated thread that handles retrieving imagery from an unlocked Leap Motion Peripheral'''
-    def __init__(self, source = 0, resolution = (640, 480), timeout=3.0):
+    def __init__(self, source = 1, resolution = (640, 480), timeout=3.0):
         '''Initialize Leap Image Capture'''
         threading.Thread.__init__(self)
         self.source = source
-        self.cam = cv2.VideoCapture(self.source)
+        self.cam = pyrealuvc.VideoCapture(self.source)
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
         self.cam.set(cv2.CAP_PROP_CONVERT_RGB, False) # Does not work reliably in DirectShow :(

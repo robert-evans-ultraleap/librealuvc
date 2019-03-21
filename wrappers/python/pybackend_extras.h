@@ -3,7 +3,7 @@
 
 using namespace librealuvc;
 
-namespace pybackend2 {
+namespace pyrealuvc {
     enum class command
     {
         enable_advanced_mode = 0x2d,

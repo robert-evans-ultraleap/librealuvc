@@ -21,14 +21,14 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
 #include <sstream>
 #include <vector>
 
-#define NAME pybackend2
-#define SNAME "pybackend2"
+#define NAME pyrealuvc
+#define SNAME "pyrealuvc"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
 
 using namespace librealuvc;
-using namespace pybackend2;
+using namespace pyrealuvc;
 
 
 // Prevents expensive copies of pixel buffers into python
@@ -47,7 +47,7 @@ PYBIND11_MODULE(NAME, m) {
         .value("USB3_2", librealuvc::usb_spec::usb3_2_type);
 #endif
 
-    m.doc() = "Wrapper for the backend of librealsense";
+    m.doc() = "Wrapper for librealuvc";
 
     py::class_<librealuvc::control_range> control_range(m, "control_range");
     control_range.def(py::init<>())
@@ -96,10 +96,8 @@ PYBIND11_MODULE(NAME, m) {
                   .def_readwrite("node", &librealuvc::extension_unit::node)
                   .def_readwrite("id", &librealuvc::extension_unit::id);
 
-#if 0
     py::class_<librealuvc::command_transfer, std::shared_ptr<librealuvc::command_transfer>> command_transfer(m, "command_transfer");
     command_transfer.def("send_receive", &librealuvc::command_transfer::send_receive, "data"_a, "timeout_ms"_a=5000, "require_response"_a=true);
-#endif
 
 #if 0
     py::enum_<rs2_option> option(m, "option");
@@ -348,6 +346,24 @@ PYBIND11_MODULE(NAME, m) {
         .def("create_hid_device", &librealuvc::backend::create_hid_device, "info"_a)
         .def("query_hid_devices", &librealuvc::backend::query_hid_devices)
         .def("create_time_service", &librealuvc::backend::create_time_service);
+    
+    py::class_<librealuvc::VideoCapture, std::shared_ptr<librealuvc::VideoCapture>, cv::VideoCapture> vidcap(m, "VideoCapture");
+    vidcap
+      .def(py::init<>())
+      .def(py::init<int>())
+      .def(py::init<const cv::String&>())
+      .def(py::init<const cv::String&, int>())
+      .def("get",      &librealuvc::VideoCapture::get, "propId"_a)
+      .def("grab",     &librealuvc::VideoCapture::grab)
+      .def("isOpened", &librealuvc::VideoCapture::isOpened)
+      .def("read",     &librealuvc::VideoCapture::read)
+      .def("release",  &librealuvc::VideoCapture::release)
+      .def("retrieve", &librealuvc::VideoCapture::retrieve, "image"_a, "flag"_a)
+      .def("set",      &librealuvc::VideoCapture::set, "propId"_a, "value"_a)
+      .def("is_extended",    &librealuvc::VideoCapture::is_extended)
+      .def("get_vendor_id",  &librealuvc::VideoCapture::get_vendor_id)
+      .def("get_product_id", &librealuvc::VideoCapture::get_product_id);
+
 #if 0
     py::class_<librealuvc::multi_pins_uvc_device, std::shared_ptr<librealuvc::multi_pins_uvc_device>, librealuvc::uvc_device> multi_pins_uvc_device(m, "multi_pins_uvc_device");
     multi_pins_uvc_device.def(py::init<std::vector<std::shared_ptr<librealuvc::uvc_device>>&>())

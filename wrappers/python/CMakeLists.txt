@@ -29,7 +29,9 @@ set(RAW_RS_CPP
   ../../src/linux/backend-hid.cpp
   ../../src/linux/backend-v4l2.cpp
   ../../src/log.cpp
+  ../../src/realuvc_driver.cpp
   ../../src/types.cpp
+  ../../src/videocapture.cpp
   ../../src/win/win-backend.cpp
   ../../src/win/win-helpers.cpp
   ../../src/win/win-hid.cpp
@@ -44,6 +46,7 @@ set(RAW_RS_HPP
   ../../src/linux/backend-hid.h
   ../../src/types.h
   ../../include/librealuvc/realuvc.h
+  ../../include/librealuvc/realuvc_driver.h
   ../../include/librealuvc/ru_common.h
   ../../include/librealuvc/ru_exception.h
   ../../include/librealuvc/ru_hid.h
@@ -51,6 +54,7 @@ set(RAW_RS_HPP
   ../../include/librealuvc/ru_option.h
   ../../include/librealuvc/ru_usb.h
   ../../include/librealuvc/ru_uvc.h
+  ../../include/librealuvc/ru_videocapture.h
 )
 
 if(${BACKEND} STREQUAL "RS2_USE_LIBUVC_BACKEND")
@@ -71,7 +75,12 @@ pybind11_add_module(pyrealuvc MODULE ${RAW_RS_CPP} ${RAW_RS_HPP})
 if(USE_EXTERNAL_USB)
   #add_dependencies(pyrealuvc libusb)
 endif()
-target_link_libraries(pyrealuvc PRIVATE ${LIBUSB1_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(pyrealuvc
+  PRIVATE
+    ${LIBUSB1_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${OpenCV_LIBS}
+)
 set_target_properties(pyrealuvc PROPERTIES
   VERSION   ${REALUVC_VERSION_STRING}
   SOVERSION ${REALUVC_VERSION_MAJOR}

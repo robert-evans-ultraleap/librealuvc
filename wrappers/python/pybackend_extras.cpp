@@ -7,7 +7,7 @@ using namespace librealuvc;
 #include "../../third-party/stb_image_write.h"
 
 // 123e4567-e89b-12d3-a456-426655440000
-namespace pybackend2 {
+namespace pyrealuvc {
 
     platform::guid stoguid(std::string str)
     {
