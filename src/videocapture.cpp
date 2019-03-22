@@ -251,37 +251,48 @@ bool VideoCapture::set(int prop_id, double val) {
   if (is_opencv_) return opencv_->set(prop_id, val);
   if (!is_realuvc_) return false;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
+  int32_t ival = (int32_t)val;
   switch (prop_id) {
     // properties which we can handle
+    case cv::CAP_PROP_BRIGHTNESS:
+      return realuvc_->set_pu(RU_OPTION_BRIGHTNESS, ival);
+    case cv::CAP_PROP_CONTRAST:
+      return realuvc_->set_pu(RU_OPTION_CONTRAST, ival);
     case cv::CAP_PROP_FOURCC:
-      istream->profile_.format = (int)val;
-      return true;
-    case cv::CAP_PROP_FRAME_WIDTH:
-      istream->profile_.width = (int)val;
-      return true;
-    case cv::CAP_PROP_FRAME_HEIGHT:
-      istream->profile_.height = (int)val;
+      istream->profile_.format = ival;
       return true;
     case cv::CAP_PROP_FPS:
-      istream->profile_.fps = (int)val;
+      istream->profile_.fps = ival;
       break;
-    case cv::CAP_PROP_BRIGHTNESS:
-      break;
-    case cv::CAP_PROP_SATURATION:
-      break;
+    case cv::CAP_PROP_FRAME_HEIGHT:
+      istream->profile_.height = ival;
+      return true;
+    case cv::CAP_PROP_FRAME_WIDTH:
+      istream->profile_.width = ival;
+      return true;
     case cv::CAP_PROP_GAIN:
+      return realuvc_->set_pu(RU_OPTION_GAIN, ival);
+    case cv::CAP_PROP_GAMMA:
+      return realuvc_->set_pu(RU_OPTION_GAMMA, ival);
+    case cv::CAP_PROP_SATURATION:
+      return realuvc_->set_pu(RU_OPTION_SATURATION, ival);
+    case cv::CAP_PROP_SHARPNESS:
+      return realuvc_->set_pu(RU_OPTION_SHARPNESS, ival);
+    case cv::CAP_PROP_ZOOM:
+#if 0
+      return realuvc_->set_pu(RU_OPTION_ZOOM, ival);
+#else
       break;
-    case cv::CAP_PROP_CONVERT_RGB:
-      break;
+#endif
     // properties we will silently ignore
-    case cv::CAP_PROP_POS_MSEC:
-    case cv::CAP_PROP_POS_FRAMES:
-    case cv::CAP_PROP_POS_AVI_RATIO:
-    case cv::CAP_PROP_FRAME_COUNT:
-    case cv::CAP_PROP_FORMAT:
-    case cv::CAP_PROP_MODE:
-    case cv::CAP_PROP_CONTRAST:
+    case cv::CAP_PROP_CONVERT_RGB:
     case cv::CAP_PROP_HUE:
+    case cv::CAP_PROP_FORMAT:
+    case cv::CAP_PROP_FRAME_COUNT:
+    case cv::CAP_PROP_MODE:
+    case cv::CAP_PROP_POS_AVI_RATIO:
+    case cv::CAP_PROP_POS_FRAMES:
+    case cv::CAP_PROP_POS_MSEC:
       return true;
     // invalid properties
     default:

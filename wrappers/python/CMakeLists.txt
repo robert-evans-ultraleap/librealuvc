@@ -18,7 +18,7 @@ elseif(COMPILER_SUPPORTS_CXX0X)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 endif()
 
-set(DEPENDENCIES librealuvc)
+set(DEPENDENCIES librealuvc ${OpenCV_LIBS})
 
 add_subdirectory(third_party/pybind11)
 

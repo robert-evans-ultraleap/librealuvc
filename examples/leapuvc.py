@@ -13,6 +13,12 @@ import pyrealuvc
 #except:
 #    print("ERROR: failed to load module 'pyrealuvc'")
 
+try:
+    foo = cv2.VideoCapture(0)
+    foo.release()
+except:
+    print("DEBUG: caught exception")
+
 class leapImageThread(threading.Thread):
     '''A dedicated thread that handles retrieving imagery from an unlocked Leap Motion Peripheral'''
     def __init__(self, source = 1, resolution = (640, 480), timeout=3.0):
@@ -22,6 +28,7 @@ class leapImageThread(threading.Thread):
         self.cam = pyrealuvc.VideoCapture(self.source)
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
+        self.cam.set(cv2.CAP_PROP_FPS, 57.5)
         self.cam.set(cv2.CAP_PROP_CONVERT_RGB, False) # Does not work reliably in DirectShow :(
         self.resolution = (int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH)), 
                            int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT)))
@@ -38,8 +45,10 @@ class leapImageThread(threading.Thread):
         self.running = True
         while(time.time() - self.timeoutTimer < self.timeout):
             if self.cam.isOpened():
+                print("DEBUG: self.cam.read() ...")
                 rval, frame = self.cam.read()
                 if(rval):
+                    print("DEBUG: self.cam.read() PASS")
                     # Reshape our one-dimensional image into a proper side-by-side view of the Peripheral's feed
                     frame = np.reshape(frame, (self.resolution[1], self.resolution[0]*2))
                     self.embeddedLine = self.getEmbeddedLine(frame)
@@ -48,6 +57,10 @@ class leapImageThread(threading.Thread):
                     leftRightImage[1,:,:] = frame[:, 1::2]
                     self.frame = leftRightImage
                     self.newFrame = True
+                else:
+                    print("DEBUG: self.cam.read() FAIL")
+            else:
+                printf("DEBUG: self.cam.isOpened() false")
         print("Exiting Leap Image Thread!")
         self.running = False
     def read(self):

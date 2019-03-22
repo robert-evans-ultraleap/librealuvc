@@ -10,14 +10,17 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
-
 // makes std::function conversions work
 #include <pybind11/functional.h>
+
+#include <Python.h>
+#include <opencv2/core.hpp>
 
 #include "../src/backend.h"
 #include "pybackend_extras.h"
 #include "../../third-party/stb_image_write.h"
 
+#include <cstdio>
 #include <sstream>
 #include <vector>
 
@@ -30,6 +33,57 @@ using namespace pybind11::literals;
 using namespace librealuvc;
 using namespace pyrealuvc;
 
+namespace {
+  
+// cv::Mat to/from Numpy array (adapted from opencv/modules/python/src2/cv2.cpp)
+
+class ImportCXXFromPythonModules {
+ public:
+  typedef cv::MatAllocator* GetAllocatorFunc();
+  GetAllocatorFunc* get_numpy_allocator_;
+
+  ImportCXXFromPythonModules() {
+    Py_Initialize();
+    void* val = PyCapsule_Import("cv2.CXX_get_numpy_allocator", 0);
+    printf("get_numpy_allocator is func %p\n", val);
+    *(void**)&get_numpy_allocator_ = val;
+  }
+};
+
+ImportCXXFromPythonModules import_cxx;
+
+PyObject* pyopencv_from(const cv::Mat& m) {
+#if 0
+  if (!m.data) {
+    printf("DEBUG: Py_RETURN_NONE\n"); fflush(stdout);
+    Py_RETURN_NONE;
+  }
+#endif
+  cv::Mat* p = const_cast<cv::Mat*>(&m);
+  PyObject* obj;
+  auto numpy_alloc = import_cxx.get_numpy_allocator_();
+  printf("DEBUG: get_numpy_allocator() -> %p\n", numpy_alloc);
+  if (p->u && (p->allocator == numpy_alloc)) {
+    obj = (PyObject*)p->u->userdata;
+    printf("DEBUG: p->u %p numpy_allocator obj %p\n", p->u, obj); fflush(stdout);
+    Py_INCREF(obj);
+  } else {
+    cv::Mat temp;
+    temp.allocator = numpy_alloc;
+    printf("DEBUG: m cols %d x rows %d copyTo(temp) numpy_alloc %p ...\n", m.cols, m.rows, numpy_alloc);
+    m.copyTo(temp);
+    obj = (PyObject*)temp.u->userdata;
+    printf("DEBUG: p->u %p not numpy obj %p\n", p->u, obj); fflush(stdout);
+    Py_INCREF(obj);
+  }
+  return obj;
+}
+
+PyObject* pyopencv_from(const bool& value) {
+  return PyBool_FromLong(value);
+}
+
+} // anon
 
 // Prevents expensive copies of pixel buffers into python
 PYBIND11_MAKE_OPAQUE(std::vector<uint8_t>)
@@ -347,18 +401,26 @@ PYBIND11_MODULE(NAME, m) {
         .def("query_hid_devices", &librealuvc::backend::query_hid_devices)
         .def("create_time_service", &librealuvc::backend::create_time_service);
     
-    py::class_<librealuvc::VideoCapture, std::shared_ptr<librealuvc::VideoCapture>, cv::VideoCapture> vidcap(m, "VideoCapture");
+    py::class_<librealuvc::VideoCapture, std::shared_ptr<librealuvc::VideoCapture>> vidcap(m, "VideoCapture");
     vidcap
       .def(py::init<>())
       .def(py::init<int>())
       .def(py::init<const cv::String&>())
       .def(py::init<const cv::String&, int>())
       .def("get",      &librealuvc::VideoCapture::get, "propId"_a)
-      .def("grab",     &librealuvc::VideoCapture::grab)
+       // .def("grab",     &librealuvc::VideoCapture::grab)
       .def("isOpened", &librealuvc::VideoCapture::isOpened)
-      .def("read",     &librealuvc::VideoCapture::read)
+      .def("read",
+        [](librealuvc::VideoCapture& this_ref)->PyObject* {
+          auto& image = this_ref.get_reusable_image();
+          printf("DEBUG: this_ref.read(image) ...\n"); fflush(stdout);
+          bool ok = this_ref.read(image);
+          printf("DEBUG: this_ref.read(image) -> %s\n", ok ? "true" : "false"); fflush(stdout);
+          return Py_BuildValue("(NN)", pyopencv_from(ok), pyopencv_from(image));
+        }
+      )
       .def("release",  &librealuvc::VideoCapture::release)
-      .def("retrieve", &librealuvc::VideoCapture::retrieve, "image"_a, "flag"_a)
+      // .def("retrieve", &librealuvc::VideoCapture::retrieve, "image"_a, "flag"_a)
       .def("set",      &librealuvc::VideoCapture::set, "propId"_a, "value"_a)
       .def("is_extended",    &librealuvc::VideoCapture::is_extended)
       .def("get_vendor_id",  &librealuvc::VideoCapture::get_vendor_id)

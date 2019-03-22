@@ -42,6 +42,7 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   int product_id_;
   shared_ptr<librealuvc::uvc_device> realuvc_;
   shared_ptr<IVideoStream> istream_;
+  cv::Mat reusable_image_;
   
  public:
   VideoCapture();
@@ -75,6 +76,8 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   
   virtual bool get_xu(int ctrl, void* data, int len);
   virtual bool set_xu(int ctrl, const void* data, int len);
+  
+  inline cv::Mat& get_reusable_image() { return reusable_image_; }
 };
   
 } // end librealuvc
