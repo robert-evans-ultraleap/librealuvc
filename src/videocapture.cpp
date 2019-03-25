@@ -78,26 +78,39 @@ VideoCapture::VideoCapture(const cv::String& filename, int api_preference) :
 VideoCapture::~VideoCapture() {
 }
 
+static double get_pu(const std::shared_ptr<uvc_device>& dev, ru_option opt) {
+  int32_t val = 0;
+  bool ok = dev->get_pu(opt, val);
+  if (!ok) val = 0;
+  return (double)val;
+}
+
 double VideoCapture::get(int prop_id) const {
   if (is_opencv_) return opencv_->get(prop_id);
   if (!is_realuvc_) return 0.0;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   switch (prop_id) {
     // properties which we can handle
+    case cv::CAP_PROP_BRIGHTNESS:
+      return get_pu(realuvc_, RU_OPTION_BRIGHTNESS);
+    case cv::CAP_PROP_CONTRAST:
+      return get_pu(realuvc_, RU_OPTION_CONTRAST);
     case cv::CAP_PROP_FOURCC:
       return (double)istream->profile_.format;
-    case cv::CAP_PROP_FRAME_WIDTH:
-      return (double)istream->profile_.width;
-    case cv::CAP_PROP_FRAME_HEIGHT:
-      return (double)istream->profile_.height;
     case cv::CAP_PROP_FPS:
       return (double)istream->profile_.fps;
-      break;
-    case cv::CAP_PROP_BRIGHTNESS:
-      break;
-    case cv::CAP_PROP_SATURATION:
-      break;
+    case cv::CAP_PROP_FRAME_HEIGHT:
+      return (double)istream->profile_.height;
+    case cv::CAP_PROP_FRAME_WIDTH:
+      return (double)istream->profile_.width;
     case cv::CAP_PROP_GAIN:
+      return get_pu(realuvc_, RU_OPTION_GAIN);
+    case cv::CAP_PROP_GAMMA:
+      return get_pu(realuvc_, RU_OPTION_GAIN);
+    case cv::CAP_PROP_SATURATION:
+      return get_pu(realuvc_, RU_OPTION_SATURATION);
+    case cv::CAP_PROP_SHARPNESS:
+      return get_pu(realuvc_, RU_OPTION_SHARPNESS);
       break;
     case cv::CAP_PROP_CONVERT_RGB:
       break;
@@ -108,7 +121,6 @@ double VideoCapture::get(int prop_id) const {
     case cv::CAP_PROP_FRAME_COUNT:
     case cv::CAP_PROP_FORMAT:
     case cv::CAP_PROP_MODE:
-    case cv::CAP_PROP_CONTRAST:
     case cv::CAP_PROP_HUE:
       return 0.0;
     // invalid properties
