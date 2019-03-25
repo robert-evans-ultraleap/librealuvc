@@ -434,14 +434,8 @@ PYBIND11_MODULE(NAME, m) {
           //cv::Mat image;
           bool ok = this_ref.read(image);
           PyObject* image_obj = import_cxx.pyopencv_from_mat_(image);
-          // Are we getting the ref count wrong ?
-          int refs0 = (int)image_obj->ob_refcnt;
           auto tuple = Py_BuildValue("(NN)", pyopencv_from_bool(ok), image_obj);
-          int refs1 = (int)image_obj->ob_refcnt;
-          int tuple_refs = (int)tuple->ob_refcnt;
-          printf("DEBUG: image refs0 %d refs1 %d, tuple refs %d\n", refs0, refs1, tuple_refs);
           auto result = py::reinterpret_steal<py::object>(tuple);
-          printf("DEBUG: tuple_refs %d\n", (int)tuple->ob_refcnt);
           return result;
         }
       )

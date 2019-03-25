@@ -1,7 +1,7 @@
 #include <librealuvc/realuvc_driver.h>
 #include <condition_variable>
 
-#if 0
+#if 1
 #define D(...) { }
 #else
 #define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
