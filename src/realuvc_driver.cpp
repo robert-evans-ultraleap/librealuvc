@@ -1,7 +1,7 @@
 #include <librealuvc/realuvc_driver.h>
 #include <condition_variable>
 
-#if 1
+#if 0
 #define D(...) { }
 #else
 #define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
@@ -23,6 +23,7 @@ class DevMatAllocator : public cv::MatAllocator {
     int dims, const int* sizes, int type, void* data,
     size_t* step, cv::AccessFlag flags, cv::UMatUsageFlags usage
   ) const {
+    D("DevMatAllocator::allocate A ...");
     auto alloc = cv::Mat::getDefaultAllocator();
     auto result = alloc->allocate(dims, sizes, type, data, step, flags, usage);
     if (result) result->currAllocator = alloc;
@@ -30,6 +31,7 @@ class DevMatAllocator : public cv::MatAllocator {
   }
   
   virtual bool allocate(cv::UMatData* data, cv::AccessFlag flags, cv::UMatUsageFlags usage) const {
+    D("DevMatAllocator::allocate B ...");
     auto alloc = cv::Mat::getDefaultAllocator();
     auto result = alloc->allocate(data, flags, usage);
     if (result) data->currAllocator = alloc;
@@ -42,7 +44,9 @@ class DevMatAllocator : public cv::MatAllocator {
     const size_t dstofs[], const size_t dststep[],
     bool sync
   ) const {
-    auto alloc = cv::Mat::getDefaultAllocator();
+    D("DevMatAllocator::copy() this %p dst currAllocator %p prevAllocator %p ...",
+      this, dst->currAllocator, dst->prevAllocator);
+    auto alloc = (dst->currAllocator ? dst->currAllocator : cv::Mat::getDefaultAllocator());
     alloc->copy(
       src, dst, dims, sz, srcofs, srcstep, dstofs, dststep, sync
     );
@@ -52,7 +56,7 @@ class DevMatAllocator : public cv::MatAllocator {
   // deallocate() is the only method with non-default behavior
   
   virtual void deallocate(cv::UMatData* data) const {
-    D("deallocate(umatdata %p) DevFrame %p", data, data->handle);
+    D("DevMatAllocator::deallocate(umatdata %p) DevFrame %p", data, data->handle);
     DevFrame* f = (DevFrame*)data->handle;
     data->handle = nullptr;
     if (f) delete f;
@@ -79,7 +83,7 @@ class DevMatAllocator : public cv::MatAllocator {
   virtual void unmap(cv::UMatData* data) const {
     // From reading the source code of OpenCV, it turns out that unmap()
     // is the method called when the refcount goes to zero.
-    // D("unmap(umatdata %p) DevFrame %p", data, data->handle);
+    D("DevMatAllocator::unmap(umatdata %p) DevFrame %p", data, data->handle);
     DevFrame* f = (DevFrame*)data->handle;
     data->handle = nullptr;
     if (f) delete f;
@@ -203,13 +207,14 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   --size_;
   cv::UMatData* data = f;
   // D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
-  cv::Mat m;
+  cv::Mat m(0, 0, CV_8UC1);
   m.allocator = &single_alloc;
   m.cols = f->profile_.width;
   m.rows = f->profile_.height;
   m.data = (uchar*)f->frame_.pixels;
   m.dims = 2;
-  // m.flags ?
+  m.step.p[0] = (m.cols * sizeof(uint8_t));
+  m.step.p[1] = sizeof(uint8_t);
   // Leap Motion devices pretend to be giving frames in YUY2 format
   // (4 bytes for 2 pixels), but it's really 8bit grayscale with
   // each row containing both the L and R rows.

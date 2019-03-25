@@ -15,6 +15,7 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
 
 #include <Python.h>
 #include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
 
 #include "../src/backend.h"
 #include "pybackend_extras.h"
@@ -39,48 +40,65 @@ namespace {
 
 class ImportCXXFromPythonModules {
  public:
-  typedef cv::MatAllocator* GetAllocatorFunc();
-  GetAllocatorFunc* get_numpy_allocator_;
+  typedef cv::MatAllocator* FuncTypeA();
+  FuncTypeA* get_numpy_allocator_;
+  typedef PyObject* FuncTypeB(const cv::Mat&);
+  FuncTypeB* pyopencv_from_mat_;
 
   ImportCXXFromPythonModules() {
     Py_Initialize();
-    void* val = PyCapsule_Import("cv2.CXX_get_numpy_allocator", 0);
-    printf("get_numpy_allocator is func %p\n", val);
+    void* val;
+    val = PyCapsule_Import("cv2.CXX_get_numpy_allocator", 0);
     *(void**)&get_numpy_allocator_ = val;
+    val = PyCapsule_Import("cv2.CXX_pyopencv_from_mat", 0);
+    *(void**)&pyopencv_from_mat_ = val;
   }
 };
 
 ImportCXXFromPythonModules import_cxx;
 
-PyObject* pyopencv_from(const cv::Mat& m) {
-#if 0
+class PyAllowThreads {
+public:
+  PyAllowThreads() : _state(PyEval_SaveThread()) { }
+  
+  ~PyAllowThreads() { PyEval_RestoreThread(_state); }
+private:
+  PyThreadState* _state;
+};
+
+PyObject* pyopencv_from_mat(const cv::Mat& m) {
   if (!m.data) {
-    printf("DEBUG: Py_RETURN_NONE\n"); fflush(stdout);
     Py_RETURN_NONE;
   }
-#endif
-  cv::Mat* p = const_cast<cv::Mat*>(&m);
-  PyObject* obj;
-  auto numpy_alloc = import_cxx.get_numpy_allocator_();
-  printf("DEBUG: get_numpy_allocator() -> %p\n", numpy_alloc);
-  if (p->u && (p->allocator == numpy_alloc)) {
-    obj = (PyObject*)p->u->userdata;
-    printf("DEBUG: p->u %p numpy_allocator obj %p\n", p->u, obj); fflush(stdout);
-    Py_INCREF(obj);
+  cv::MatAllocator* numpy_alloc = (*import_cxx.get_numpy_allocator_)();
+  cv::Mat numpy_mat;
+  numpy_mat.allocator = numpy_alloc;
+  PyObject* obj = nullptr;
+  if (m.u && (m.allocator == numpy_alloc)) {
+    // This cv::Mat is already allocated with an associated PyObject
+    obj = (PyObject*)m.u->userdata;
   } else {
-    cv::Mat temp;
-    temp.allocator = numpy_alloc;
-    printf("DEBUG: m cols %d x rows %d copyTo(temp) numpy_alloc %p ...\n", m.cols, m.rows, numpy_alloc);
-    m.copyTo(temp);
-    obj = (PyObject*)temp.u->userdata;
-    printf("DEBUG: p->u %p not numpy obj %p\n", p->u, obj); fflush(stdout);
-    Py_INCREF(obj);
+    // We need to copy into a cv::Mat with an associated PyObject
+    printf("DEBUG: numpy_mat.create ...\n");
+    numpy_mat.create(m.rows, m.cols, m.type());
+    try {
+      PyAllowThreads allow_threads;
+      // We are using two non-standard MatAllocators here - the input Matrix has
+      // librealuvc's custom behavior, and the output has the numpy_allocator.
+      m.copyTo(numpy_mat);
+    } catch (const cv::Exception& e) {
+      printf("DEBUG: caught exception: %s\n", e.what());
+      Py_RETURN_NONE;
+    }
+    obj = (PyObject*)numpy_mat.u->userdata;
   }
+  // Note that we must do Py_INCREF before numpy_mat goes out of scope
+  Py_INCREF(obj);
   return obj;
 }
 
-PyObject* pyopencv_from(const bool& value) {
-  return PyBool_FromLong(value);
+PyObject* pyopencv_from_bool(bool value) {
+  return (value ? Py_True : Py_False);
 }
 
 } // anon
@@ -411,12 +429,20 @@ PYBIND11_MODULE(NAME, m) {
        // .def("grab",     &librealuvc::VideoCapture::grab)
       .def("isOpened", &librealuvc::VideoCapture::isOpened)
       .def("read",
-        [](librealuvc::VideoCapture& this_ref)->PyObject* {
+        [](librealuvc::VideoCapture& this_ref) {
           auto& image = this_ref.get_reusable_image();
-          printf("DEBUG: this_ref.read(image) ...\n"); fflush(stdout);
+          //cv::Mat image;
           bool ok = this_ref.read(image);
-          printf("DEBUG: this_ref.read(image) -> %s\n", ok ? "true" : "false"); fflush(stdout);
-          return Py_BuildValue("(NN)", pyopencv_from(ok), pyopencv_from(image));
+          PyObject* image_obj = import_cxx.pyopencv_from_mat_(image);
+          // Are we getting the ref count wrong ?
+          int refs0 = (int)image_obj->ob_refcnt;
+          auto tuple = Py_BuildValue("(NN)", pyopencv_from_bool(ok), image_obj);
+          int refs1 = (int)image_obj->ob_refcnt;
+          int tuple_refs = (int)tuple->ob_refcnt;
+          printf("DEBUG: image refs0 %d refs1 %d, tuple refs %d\n", refs0, refs1, tuple_refs);
+          auto result = py::reinterpret_steal<py::object>(tuple);
+          printf("DEBUG: tuple_refs %d\n", (int)tuple->ob_refcnt);
+          return result;
         }
       )
       .def("release",  &librealuvc::VideoCapture::release)

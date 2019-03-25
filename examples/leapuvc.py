@@ -2,22 +2,10 @@ import threading
 import time
 import struct
 
-try:
-    import numpy as np
-    import cv2
-    from scipy.optimize import curve_fit
-except:
-    print("ERROR LOADING MODULES: Ensure 'numpy', 'opencv-python', and 'scipy' are installed.")
-#try:
+import numpy as np
+import cv2
+from scipy.optimize import curve_fit
 import pyrealuvc
-#except:
-#    print("ERROR: failed to load module 'pyrealuvc'")
-
-try:
-    foo = cv2.VideoCapture(0)
-    foo.release()
-except:
-    print("DEBUG: caught exception")
 
 class leapImageThread(threading.Thread):
     '''A dedicated thread that handles retrieving imagery from an unlocked Leap Motion Peripheral'''
@@ -45,22 +33,18 @@ class leapImageThread(threading.Thread):
         self.running = True
         while(time.time() - self.timeoutTimer < self.timeout):
             if self.cam.isOpened():
-                print("DEBUG: self.cam.read() ...")
                 rval, frame = self.cam.read()
                 if(rval):
-                    print("DEBUG: self.cam.read() PASS")
                     # Reshape our one-dimensional image into a proper side-by-side view of the Peripheral's feed
-                    frame = np.reshape(frame, (self.resolution[1], self.resolution[0]*2))
+                    width = self.resolution[0]
+                    height = self.resolution[1]
+                    frame = np.reshape(frame, (height, width*2))
                     self.embeddedLine = self.getEmbeddedLine(frame)
-                    leftRightImage = np.empty((2, self.resolution[1], self.resolution[0]), dtype=np.uint8)
-                    leftRightImage[0,:,:]  = frame[:,  ::2]
-                    leftRightImage[1,:,:] = frame[:, 1::2]
+                    leftRightImage = np.empty((2, height, width), dtype=np.uint8)
+                    leftRightImage[0] = frame[0:height, 0:width]
+                    leftRightImage[1] = frame[0:height, width:2*width]
                     self.frame = leftRightImage
                     self.newFrame = True
-                else:
-                    print("DEBUG: self.cam.read() FAIL")
-            else:
-                printf("DEBUG: self.cam.isOpened() false")
         print("Exiting Leap Image Thread!")
         self.running = False
     def read(self):
