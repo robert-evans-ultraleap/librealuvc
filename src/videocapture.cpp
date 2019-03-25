@@ -27,6 +27,60 @@ uint32_t str2fourcc(const char* s) {
   return result;
 }
 
+const char* prop_name(int prop_id) {
+  switch (prop_id) {
+#define PROP(x) case cv::CAP_PROP_##x: return "CAP_PROP_" #x;
+    PROP(AUTO_EXPOSURE)
+    PROP(AUTO_WB)
+    PROP(AUTOFOCUS)
+    PROP(BACKEND)
+    PROP(BACKLIGHT)
+    PROP(BRIGHTNESS)
+    PROP(BUFFERSIZE)
+    PROP(CHANNEL)
+    PROP(CONTRAST)
+    PROP(CONVERT_RGB)
+    PROP(EXPOSURE)
+    PROP(FOCUS)
+    PROP(FORMAT)
+    PROP(FOURCC)
+    PROP(FPS)
+    PROP(FRAME_COUNT)
+    PROP(FRAME_HEIGHT)
+    PROP(FRAME_WIDTH)
+    PROP(GAIN)
+    PROP(GAMMA)
+    PROP(GUID)
+    PROP(HUE)
+    PROP(IRIS)
+    PROP(ISO_SPEED)
+    PROP(MODE)
+    PROP(MONOCHROME)
+    PROP(PAN)
+    PROP(POS_AVI_RATIO)
+    PROP(POS_FRAMES)
+    PROP(POS_MSEC)
+    PROP(RECTIFICATION)
+    PROP(ROLL)
+    PROP(SAR_DEN)
+    PROP(SAR_NUM)
+    PROP(SATURATION)
+    PROP(SETTINGS)
+    PROP(SHARPNESS)
+    PROP(TEMPERATURE)
+    PROP(TILT)
+    PROP(TRIGGER)
+    PROP(TRIGGER_DELAY)
+    PROP(WB_TEMPERATURE)
+    PROP(WHITE_BALANCE_BLUE_U)
+    PROP(WHITE_BALANCE_RED_V)
+    PROP(ZOOM)
+#undef PRO
+    default:
+      return("UNKNOWN");
+  }
+}
+
 // A realuvc-managed device will pass frame buffers by callback. These will
 // wrapped in a cv::Mat and queued until a VideoCapture::read(), 
 // VideoCapture::retrieve(), or being dropped due to queue overflow.
@@ -89,12 +143,16 @@ double VideoCapture::get(int prop_id) const {
   if (is_opencv_) return opencv_->get(prop_id);
   if (!is_realuvc_) return 0.0;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
+  printf("DEBUG: VideoCapture::get(%s) ...\n", prop_name(prop_id)); fflush(stdout);
   switch (prop_id) {
     // properties which we can handle
     case cv::CAP_PROP_BRIGHTNESS:
       return get_pu(realuvc_, RU_OPTION_BRIGHTNESS);
     case cv::CAP_PROP_CONTRAST:
       return get_pu(realuvc_, RU_OPTION_CONTRAST);
+    case cv::CAP_PROP_CONVERT_RGB:
+      // FIXME
+      return true;
     case cv::CAP_PROP_FOURCC:
       return (double)istream->profile_.format;
     case cv::CAP_PROP_FPS:
@@ -106,14 +164,13 @@ double VideoCapture::get(int prop_id) const {
     case cv::CAP_PROP_GAIN:
       return get_pu(realuvc_, RU_OPTION_GAIN);
     case cv::CAP_PROP_GAMMA:
-      return get_pu(realuvc_, RU_OPTION_GAIN);
+      return get_pu(realuvc_, RU_OPTION_GAMMA);
     case cv::CAP_PROP_SATURATION:
       return get_pu(realuvc_, RU_OPTION_SATURATION);
     case cv::CAP_PROP_SHARPNESS:
       return get_pu(realuvc_, RU_OPTION_SHARPNESS);
-      break;
-    case cv::CAP_PROP_CONVERT_RGB:
-      break;
+    case cv::CAP_PROP_ZOOM:
+      return get_pu(realuvc_, RU_OPTION_ZOOM_ABSOLUTE);
     // properties we will silently ignore
     case cv::CAP_PROP_POS_MSEC:
     case cv::CAP_PROP_POS_FRAMES:
@@ -264,6 +321,8 @@ bool VideoCapture::set(int prop_id, double val) {
   if (!is_realuvc_) return false;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   int32_t ival = (int32_t)val;
+  printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+  bool ok = false;
   switch (prop_id) {
     // properties which we can handle
     case cv::CAP_PROP_BRIGHTNESS:
@@ -283,7 +342,9 @@ bool VideoCapture::set(int prop_id, double val) {
       istream->profile_.width = ival;
       return true;
     case cv::CAP_PROP_GAIN:
-      return realuvc_->set_pu(RU_OPTION_GAIN, ival);
+      ok = realuvc_->set_pu(RU_OPTION_GAIN, ival);
+      printf("DEBUG: set_pu(CAP_PROP_GAIN, %d) -> %s\n", ival, ok ? "true" : "false");
+      return true;
     case cv::CAP_PROP_GAMMA:
       return realuvc_->set_pu(RU_OPTION_GAMMA, ival);
     case cv::CAP_PROP_SATURATION:
@@ -291,11 +352,7 @@ bool VideoCapture::set(int prop_id, double val) {
     case cv::CAP_PROP_SHARPNESS:
       return realuvc_->set_pu(RU_OPTION_SHARPNESS, ival);
     case cv::CAP_PROP_ZOOM:
-#if 0
-      return realuvc_->set_pu(RU_OPTION_ZOOM, ival);
-#else
-      break;
-#endif
+      return realuvc_->set_pu(RU_OPTION_ZOOM_ABSOLUTE, ival);
     // properties we will silently ignore
     case cv::CAP_PROP_CONVERT_RGB:
     case cv::CAP_PROP_HUE:

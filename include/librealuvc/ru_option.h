@@ -55,6 +55,7 @@ enum ru_option {
   RU_OPTION_STREAM_FILTER, /**< Select a stream to process */
   RU_OPTION_STREAM_FORMAT_FILTER, /**< Select a stream format to process */
   RU_OPTION_STREAM_INDEX_FILTER, /**< Select a stream index to process */
+  RU_OPTION_ZOOM_ABSOLUTE,
   RU_OPTION_COUNT /**< Number of enumeration values. Not a valid input: intended to be used in for-loops. */ 
 };
 
@@ -90,6 +91,7 @@ RU_OPTION(POWER_LINE_FREQUENCY)
 RU_OPTION(ASIC_TEMPERATURE)
 RU_OPTION(ERROR_POLLING_ENABLED)
 RU_OPTION(AUTO_EXPOSURE_PRIORITY)
+RU_OPTION(ZOOM_ABSOLUTE)
 RU_OPTION(COUNT)
 
 } // end librealuvc

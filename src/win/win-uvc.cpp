@@ -479,6 +479,7 @@ namespace librealuvc
         // Camera Terminal controls will be handled with  PU option transport and handling mechanism
         static const pu_control ct_controls[] = {
             { RS2_OPTION_AUTO_EXPOSURE_PRIORITY,        KSPROPERTY_CAMERACONTROL_AUTO_EXPOSURE_PRIORITY },
+            { RS2_OPTION_ZOOM_ABSOLUTE,                 KSPROPERTY_CAMERACONTROL_ZOOM },
         };
 
         long to_100micros(long v)
