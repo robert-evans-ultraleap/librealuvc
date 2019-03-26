@@ -9,7 +9,7 @@ import pyrealuvc
 
 class leapImageThread(threading.Thread):
     '''A dedicated thread that handles retrieving imagery from an unlocked Leap Motion Peripheral'''
-    def __init__(self, source = 1, resolution = (640, 480), timeout=3.0):
+    def __init__(self, source = 1, resolution = (640, 480), timeout=10.0):
         '''Initialize Leap Image Capture'''
         threading.Thread.__init__(self)
         self.source = source

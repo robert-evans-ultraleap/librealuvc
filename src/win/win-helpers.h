@@ -18,9 +18,9 @@ namespace librealuvc
 {
     namespace platform
     {
-        bool check(const char * call, HRESULT hr, bool to_throw = true);
-#define CHECK_HR(x) check(#x, x);
-#define LOG_HR(x) check(#x, x, false);
+        bool check(int line, const char * call, HRESULT hr, bool to_throw = true);
+#define CHECK_HR(x) check(__LINE__, #x, x);
+#define LOG_HR(x) check(__LINE__, #x, x, false);
 
         std::string win_to_utf(const WCHAR * s);
 

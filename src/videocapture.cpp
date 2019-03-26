@@ -6,6 +6,8 @@
 #include <librealuvc/realuvc.h>
 #include <opencv2/core/mat.hpp>
 #include <librealuvc/realuvc_driver.h>
+#include <exception>
+#include <mutex>
 
 #if 0
 #define D(...) { }
@@ -89,6 +91,7 @@ const char* prop_name(int prop_id) {
 
 class VideoStream : public IVideoStream {
  public:
+  std::mutex mutex_;
   stream_profile profile_;
   bool is_streaming_;
   DevFrameQueue queue_;
@@ -140,9 +143,11 @@ static double get_pu(const std::shared_ptr<uvc_device>& dev, ru_option opt) {
 }
 
 double VideoCapture::get(int prop_id) const {
+  try {
   if (is_opencv_) return opencv_->get(prop_id);
   if (!is_realuvc_) return 0.0;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
+  std::unique_lock<std::mutex> lock(istream->mutex_);
   printf("DEBUG: VideoCapture::get(%s) ...\n", prop_name(prop_id)); fflush(stdout);
   switch (prop_id) {
     // properties which we can handle
@@ -183,6 +188,10 @@ double VideoCapture::get(int prop_id) const {
     // invalid properties
     default:
       return 0.0;
+  }
+  } catch (std::exception& e) {
+    printf("EXCEPTION: VideoCapture::get %s\n", e.what());
+    throw;
   }
   return 0.0;
 }
@@ -262,43 +271,51 @@ VideoCapture& VideoCapture::operator>>(cv::UMat& image) {
 }
 
 bool VideoCapture::read(cv::OutputArray image) {
+  try {
   if (is_opencv_) return opencv_->read(image);
   if (!is_realuvc_) return false;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
-  if (!istream->is_streaming_) {
-    D("profile width %d, height %d, fps %d, format 0x%x",
-      istream->profile_.width, istream->profile_.height,
-      istream->profile_.fps, istream->profile_.format);
-    D("probe_and_commit() ...");
-    auto captured_istream = istream;
-    realuvc_->probe_and_commit(
-      istream->profile_,
-      [captured_istream](stream_profile profile, frame_object frame, std::function<void()> func) {
-        captured_istream->queue_.push_back(profile, frame, func);
-      },
-      4
-    );
-    
-    try {
-      D("stream_on() ...");
-      realuvc_->stream_on();
-      D("stream_on() done");
-      D("start_callbacks() ...");
-      realuvc_->start_callbacks();
-      D("start_callbacks() done");
-      istream->is_streaming_ = true;
-    } catch (std::exception e) {
-      printf("ERROR: caught exception %s\n", e.what());
-      fflush(stdout);      
+  { std::unique_lock<std::mutex> lock(istream->mutex_);
+    if (!istream->is_streaming_) {
+      D("profile width %d, height %d, fps %d, format 0x%x",
+        istream->profile_.width, istream->profile_.height,
+        istream->profile_.fps, istream->profile_.format);
+      D("probe_and_commit() ...");
+      auto captured_istream = istream;
+      realuvc_->probe_and_commit(
+        istream->profile_,
+        [captured_istream](stream_profile profile, frame_object frame, std::function<void()> func) {
+          captured_istream->queue_.push_back(profile, frame, func);
+        },
+        4
+      );
+
+      try {
+        D("stream_on() ...");
+        realuvc_->stream_on();
+        D("stream_on() done");
+        D("start_callbacks() ...");
+        realuvc_->start_callbacks();
+        D("start_callbacks() done");
+        istream->is_streaming_ = true;
+      } catch (std::exception e) {
+        printf("ERROR: caught exception %s\n", e.what());
+        fflush(stdout);      
+      }
     }
-  }
-  if (!istream->is_streaming_) return false;
+    if (!istream->is_streaming_) return false;
+  } // don't hold the mutex while possibly waiting for frame
   cv::Mat tmp;
   istream->queue_.pop_front(tmp); // wait for a frame if necessary
   if (image.needed()) {
     // OutputArray::assign() will not copy unless it needs to
     image.assign(tmp);
   }
+  } catch (std::exception& e) {
+    printf("EXCEPTION: VideoCapture::read %s\n", e.what());
+    throw;
+  }
+
   return true;
 }
 
@@ -317,15 +334,18 @@ bool VideoCapture::retrieve(cv::OutputArray image, int flag) {
 }
 
 bool VideoCapture::set(int prop_id, double val) {
+  try {
   if (is_opencv_) return opencv_->set(prop_id, val);
   if (!is_realuvc_) return false;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
+  std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
   printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
   bool ok = false;
   switch (prop_id) {
     // properties which we can handle
     case cv::CAP_PROP_BRIGHTNESS:
+      // For Leap we have a value 0..16
       return realuvc_->set_pu(RU_OPTION_BRIGHTNESS, ival);
     case cv::CAP_PROP_CONTRAST:
       return realuvc_->set_pu(RU_OPTION_CONTRAST, ival);
@@ -366,6 +386,10 @@ bool VideoCapture::set(int prop_id, double val) {
     // invalid properties
     default:
       return false;
+  }
+  } catch (std::exception& e) {
+    printf("EXCEPTION:VideoCapture::set %s\n", e.what());
+    throw;
   }
   return false;
 }

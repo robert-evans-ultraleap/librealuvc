@@ -32,7 +32,7 @@
      type_(t) {
    }
    
-   virtual const char* what() const noexcept { return what_.c_str(); }
+   virtual const char* what() const noexcept override { return what_.c_str(); }
 
    inline ru_exception_type get_type() const { return type_; }
  };

@@ -67,10 +67,12 @@ namespace librealuvc
                 return false;
         }
 
-        bool check(const char * call, HRESULT hr, bool to_throw)
+        bool check(int line, const char * call, HRESULT hr, bool to_throw)
         {
             if (FAILED(hr))
             {
+                printf("ERROR: line %d call %s returned %s\n", 
+                  line, call, hr_to_string(hr).c_str());
                 std::string descr = to_string() << call << " returned: " << hr_to_string(hr);
                 if (to_throw)
                     throw windows_backend_exception(descr);

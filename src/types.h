@@ -59,13 +59,15 @@ class big_endian {
 };
 #pragma pack(pop)
 
-struct to_string {
-  std::ostringstream ss;
+class to_string {
+ private:
+  std::ostringstream ss_;
 
+ public:
   template<typename T>
-  to_string& operator<<(const T& val) { ss << val; return *this; }
+  to_string& operator<<(const T& val) { ss_ << val; return *this; }
   
-  operator std::string() const { return ss.str(); }
+  operator std::string() const { return ss_.str(); }
 };
 
 inline void copy(void* dst, const void* src, size_t size) {

@@ -17,7 +17,7 @@
 The library will be compiled without the metadata support!\n")
 #endif // ENFORCE_METADATA
 #else
-#define METADATA_SUPPORT
+// #define METADATA_SUPPORT
 #endif      // (WinSDK 8.1)
 
 #ifndef NOMINMAX
@@ -268,7 +268,7 @@ namespace librealuvc
                 reinterpret_cast<void **>(&ks_topology_info)));
 
             DWORD nNodes=0;
-            check("get_NumNodes", ks_topology_info->get_NumNodes(&nNodes));
+            check(__LINE__, "get_NumNodes", ks_topology_info->get_NumNodes(&nNodes));
 
             CComPtr<IUnknown> unknown = nullptr;
             CHECK_HR(ks_topology_info->CreateNodeInstance(xu.node, IID_IUnknown,
@@ -617,7 +617,16 @@ namespace librealuvc
                     }
                     else
                     {
-                        auto hr = get_video_proc()->Set(pu.property, value, VideoProcAmp_Flags_Manual);
+                        long min, max, step, def, caps;
+                        auto hr = get_video_proc()->GetRange(pu.property, &min, &max, &step, &def, &caps);
+                        if (value < min) {
+                          printf("WARNING: processing-unit value %d limited to min %d\n", value, min);
+                          value = min;
+                        } else if (value > max) {
+                          printf("WARNING: processing-unit value %d limited to max %d\n", value, max);
+                          value = max;
+                        }
+                        hr = get_video_proc()->Set(pu.property, value, VideoProcAmp_Flags_Manual);
                         if (hr == DEVICE_NOT_READY_ERROR)
                             return false;
 
@@ -658,7 +667,17 @@ namespace librealuvc
                     }
                     else
                     {
-                        auto hr = get_camera_control()->Set(ct.property, value, CameraControl_Flags_Manual);
+                        long min, max, step, def, caps;
+                        auto hr = get_camera_control()->GetRange(ct.property, &min, &max, &step, &def, &caps);
+                        if (value < min) {
+                          printf("WARNING: camera-terminal value %d limited to min %d\n", value, min);
+                          value = min;
+                        } else if (value > max) {
+                          printf("WARNING: camera-terminal value %d limited to max %d\n", value, max);
+                          value = max;
+                        }
+                        
+                        hr = get_camera_control()->Set(ct.property, value, CameraControl_Flags_Manual);
                         if (hr == DEVICE_NOT_READY_ERROR)
                             return false;
 
@@ -903,7 +922,7 @@ namespace librealuvc
                     if (FAILED(hr) || pMediaType == nullptr)
                     {
                         if (hr != MF_E_NO_MORE_TYPES) // An object ran out of media types to suggest therefore the requested chain of streaming objects cannot be completed
-                            check("_reader->GetNativeMediaType(sIndex, k, &pMediaType.p)", hr, false);
+                            check(__LINE__, "_reader->GetNativeMediaType(sIndex, k, &pMediaType.p)", hr, false);
 
                         break;
                     }
@@ -1028,7 +1047,7 @@ namespace librealuvc
                     if (FAILED(hr) || pMediaType == nullptr)
                     {
                         if (hr != MF_E_NO_MORE_TYPES) // An object ran out of media types to suggest therefore the requested chain of streaming objects cannot be completed
-                            check("_reader->GetNativeMediaType(sIndex, k, &pMediaType.p)", hr, false);
+                            check(__LINE__, "_reader->GetNativeMediaType(sIndex, k, &pMediaType.p)", hr, false);
 
                         break;
                     }
@@ -1113,7 +1132,7 @@ namespace librealuvc
                                     const auto timeout_ms = 5000;
                                     if (_has_started.wait(timeout_ms))
                                     {
-                                        check("_reader->ReadSample(...)", _readsample_result);
+                                        check(__LINE__, "_reader->ReadSample(...)", _readsample_result);
                                     }
                                     else
                                     {
