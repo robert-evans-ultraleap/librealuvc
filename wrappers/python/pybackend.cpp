@@ -13,7 +13,14 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
 // makes std::function conversions work
 #include <pybind11/functional.h>
 
-#include <Python.h>
+// Workaround for missing python32_d.lib
+#ifdef _DEBUG
+# undef _DEBUG
+# include <Python.h>
+# define _DEBUG
+#else
+# include <Python.h>
+#endif
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
@@ -66,6 +73,14 @@ private:
   PyThreadState* _state;
 };
 
+#if 0
+// Currently we use the function exported from the OpenCV cv2.cpp,
+// but that requires slight modifications to OpenCV.  In theory
+// all we need is &g_numpyAllocator, and it should be possible to 
+// get hold of that by copying inspecting a cv2-allocated cv::Mat.
+//
+// So this function may be resurrected in future.
+
 PyObject* pyopencv_from_mat(const cv::Mat& m) {
   if (!m.data) {
     Py_RETURN_NONE;
@@ -96,9 +111,10 @@ PyObject* pyopencv_from_mat(const cv::Mat& m) {
   Py_INCREF(obj);
   return obj;
 }
+#endif
 
 PyObject* pyopencv_from_bool(bool value) {
-  return (value ? Py_True : Py_False);
+  return PyBool_FromLong(value);
 }
 
 } // anon

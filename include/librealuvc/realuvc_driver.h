@@ -22,6 +22,7 @@ class DevFrame : public cv::UMatData {
  public:
   stream_profile profile_;
   frame_object frame_;
+ private:
   std::function<void()> release_func_;
   bool is_released_;
  
@@ -31,6 +32,8 @@ class DevFrame : public cv::UMatData {
     const frame_object& frame,
     const std::function<void()>& release_func
   );
+  
+  void release();
   
   ~DevFrame();
 };

@@ -116,6 +116,13 @@ DevFrame::DevFrame(
   is_released_(false) {
   handle = (void*)this;
 }
+
+void DevFrame::release() {
+  if (!is_released_) {
+    is_released_ = true;
+    release_func_();
+  }
+}
   
 DevFrame::~DevFrame() {
   if (!is_released_) release_func_();
