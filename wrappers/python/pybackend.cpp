@@ -45,73 +45,27 @@ namespace {
   
 // cv::Mat to/from Numpy array (adapted from opencv/modules/python/src2/cv2.cpp)
 
+// This requires a slightly-modified OpenCV-python which exports the
+// CXX_pyopencv_from_mat function through a PyCapsule.
+
 class ImportCXXFromPythonModules {
  public:
-  typedef cv::MatAllocator* FuncTypeA();
-  FuncTypeA* get_numpy_allocator_;
-  typedef PyObject* FuncTypeB(const cv::Mat&);
-  FuncTypeB* pyopencv_from_mat_;
+  typedef PyObject* FuncTypeA(const cv::Mat&);
+  FuncTypeA* pyopencv_from_mat_;
 
   ImportCXXFromPythonModules() {
     Py_Initialize();
     void* val;
-    val = PyCapsule_Import("cv2.CXX_get_numpy_allocator", 0);
-    *(void**)&get_numpy_allocator_ = val;
     val = PyCapsule_Import("cv2.CXX_pyopencv_from_mat", 0);
+    if (!val) {
+      fprintf(stderr, "FATAL: pyrealuvc failed to import cv2.CXX_pyopencv_from_mat\n");
+      exit(1);
+    }
     *(void**)&pyopencv_from_mat_ = val;
   }
 };
 
 ImportCXXFromPythonModules import_cxx;
-
-class PyAllowThreads {
-public:
-  PyAllowThreads() : _state(PyEval_SaveThread()) { }
-  
-  ~PyAllowThreads() { PyEval_RestoreThread(_state); }
-private:
-  PyThreadState* _state;
-};
-
-#if 0
-// Currently we use the function exported from the OpenCV cv2.cpp,
-// but that requires slight modifications to OpenCV.  In theory
-// all we need is &g_numpyAllocator, and it should be possible to 
-// get hold of that by copying inspecting a cv2-allocated cv::Mat.
-//
-// So this function may be resurrected in future.
-
-PyObject* pyopencv_from_mat(const cv::Mat& m) {
-  if (!m.data) {
-    Py_RETURN_NONE;
-  }
-  cv::MatAllocator* numpy_alloc = (*import_cxx.get_numpy_allocator_)();
-  cv::Mat numpy_mat;
-  numpy_mat.allocator = numpy_alloc;
-  PyObject* obj = nullptr;
-  if (m.u && (m.allocator == numpy_alloc)) {
-    // This cv::Mat is already allocated with an associated PyObject
-    obj = (PyObject*)m.u->userdata;
-  } else {
-    // We need to copy into a cv::Mat with an associated PyObject
-    printf("DEBUG: numpy_mat.create ...\n");
-    numpy_mat.create(m.rows, m.cols, m.type());
-    try {
-      PyAllowThreads allow_threads;
-      // We are using two non-standard MatAllocators here - the input Matrix has
-      // librealuvc's custom behavior, and the output has the numpy_allocator.
-      m.copyTo(numpy_mat);
-    } catch (const cv::Exception& e) {
-      printf("DEBUG: caught exception: %s\n", e.what());
-      Py_RETURN_NONE;
-    }
-    obj = (PyObject*)numpy_mat.u->userdata;
-  }
-  // Note that we must do Py_INCREF before numpy_mat goes out of scope
-  Py_INCREF(obj);
-  return obj;
-}
-#endif
 
 PyObject* pyopencv_from_bool(bool value) {
   return PyBool_FromLong(value);

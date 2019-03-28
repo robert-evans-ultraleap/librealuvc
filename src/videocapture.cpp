@@ -148,7 +148,7 @@ double VideoCapture::get(int prop_id) const {
   if (!is_realuvc_) return 0.0;
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   std::unique_lock<std::mutex> lock(istream->mutex_);
-  printf("DEBUG: VideoCapture::get(%s) ...\n", prop_name(prop_id)); fflush(stdout);
+  //printf("DEBUG: VideoCapture::get(%s) ...\n", prop_name(prop_id)); fflush(stdout);
   switch (prop_id) {
     // properties which we can handle
     case cv::CAP_PROP_BRIGHTNESS:
@@ -340,7 +340,7 @@ bool VideoCapture::set(int prop_id, double val) {
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
-  printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+  //printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
   bool ok = false;
   switch (prop_id) {
     // properties which we can handle
