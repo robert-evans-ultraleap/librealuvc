@@ -24,13 +24,28 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved. */
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#include <numpy/ndarrayobject.h>
+
 #include "../src/backend.h"
 #include "pybackend_extras.h"
 #include "../../third-party/stb_image_write.h"
 
+#include <cassert>
 #include <cstdio>
 #include <sstream>
 #include <vector>
+
+#if 0
+#define D(fmt, ...) { \
+  printf("DEBUG[%s,%d] ", __FILE__, __LINE__); \
+  printf(fmt, __VA_ARGS__); \
+  printf("\n"); \
+  fflush(stdout); \
+}
+#else
+#define D(fmt, ...) { }
+#endif
 
 #define NAME pyrealuvc
 #define SNAME "pyrealuvc"
@@ -45,27 +60,105 @@ namespace {
   
 // cv::Mat to/from Numpy array (adapted from opencv/modules/python/src2/cv2.cpp)
 
-// This requires a slightly-modified OpenCV-python which exports the
-// CXX_pyopencv_from_mat function through a PyCapsule.
+// We copy a good deal of code from opencv to try to make this work
+// without needing to modify the OpenCV library.
 
-class ImportCXXFromPythonModules {
+using namespace cv;
+
+class PyEnsureGIL {
  public:
-  typedef PyObject* FuncTypeA(const cv::Mat&);
-  FuncTypeA* pyopencv_from_mat_;
+  PyEnsureGIL() : _state(PyGILState_Ensure()) { }
 
-  ImportCXXFromPythonModules() {
-    Py_Initialize();
-    void* val;
-    val = PyCapsule_Import("cv2.CXX_pyopencv_from_mat", 0);
-    if (!val) {
-      fprintf(stderr, "FATAL: pyrealuvc failed to import cv2.CXX_pyopencv_from_mat\n");
-      exit(1);
-    }
-    *(void**)&pyopencv_from_mat_ = val;
-  }
+  ~PyEnsureGIL() { PyGILState_Release(_state); }
+ private:
+  PyGILState_STATE _state;
 };
 
-ImportCXXFromPythonModules import_cxx;
+class MyNumpyAllocator : public MatAllocator {
+public:
+  MyNumpyAllocator() { stdAllocator = Mat::getStdAllocator(); }
+  ~MyNumpyAllocator() { }
+
+  UMatData* x_allocate(PyObject* o, int dims, const int* sizes, int type, size_t* step) const {
+    cv::UMatData* u = new cv::UMatData(this);
+    u->data = u->origdata = (uchar*)PyArray_DATA((PyArrayObject*) o);
+    npy_intp* _strides = PyArray_STRIDES((PyArrayObject*) o);
+    for (int i = 0; i < dims-1; ++i)
+      step[i] = (size_t)_strides[i];
+    step[dims-1] = CV_ELEM_SIZE(type);
+    u->size = sizes[0]*step[0];
+    u->userdata = o;
+    return u;
+  }
+
+  UMatData* allocate(
+    int dims0, const int* sizes, int type,
+    void* data, size_t* step, AccessFlag flags, UMatUsageFlags usageFlags) const CV_OVERRIDE {
+    if (data != 0) {
+      // issue #6969: CV_Error(Error::StsAssert, "The data should normally be NULL!");
+      // probably this is safe to do in such extreme case
+      return stdAllocator->allocate(dims0, sizes, type, data, step, flags, usageFlags);
+    }
+    PyEnsureGIL gil;
+
+    int depth = CV_MAT_DEPTH(type);
+    int cn = CV_MAT_CN(type);
+    const int f = (int)(sizeof(size_t)/8);
+    int typenum = depth == CV_8U ? NPY_UBYTE : depth == CV_8S ? NPY_BYTE :
+    depth == CV_16U ? NPY_USHORT : depth == CV_16S ? NPY_SHORT :
+    depth == CV_32S ? NPY_INT : depth == CV_32F ? NPY_FLOAT :
+    depth == CV_64F ? NPY_DOUBLE : f*NPY_ULONGLONG + (f^1)*NPY_UINT;
+    int i, dims = dims0;
+    cv::AutoBuffer<npy_intp> _sizes(dims + 1);
+    for (i = 0; i < dims; i++)
+      _sizes[i] = sizes[i];
+    if ( cn > 1 )
+      _sizes[dims++] = cn;
+    PyObject* o = PyArray_SimpleNew(dims, _sizes.data(), typenum);
+    if (!o) {
+      fprintf(stderr, "ERROR: The numpy array of typenum=%d, ndims=%d can not be created", typenum, dims);
+    }
+    auto u = this->x_allocate(o, dims0, sizes, type, step);
+    u->userdata = o;
+    return u;
+  }
+
+  bool allocate(UMatData* u, AccessFlag accessFlags, UMatUsageFlags usageFlags) const CV_OVERRIDE {
+    return stdAllocator->allocate(u, accessFlags, usageFlags);
+  }
+
+  void deallocate(UMatData* u) const CV_OVERRIDE {
+    if (!u)
+      return;
+    PyEnsureGIL gil;
+    assert(u->urefcount >= 0);
+    assert(u->refcount >= 0);
+    if (u->refcount == 0) {
+      PyObject* o = (PyObject*)u->userdata;
+      Py_XDECREF(o);
+      delete u;
+    }
+  }
+
+  const MatAllocator* stdAllocator;
+};
+
+MyNumpyAllocator pybackend_numpy_alloc;
+
+PyObject* pyopencv_from_mat(const Mat& m) {
+  if (!m.data)
+    Py_RETURN_NONE;
+  Mat *p = (Mat*)&m;
+  Mat temp;
+  if (!p->u || (p->allocator != &pybackend_numpy_alloc)) {
+    temp.allocator = &pybackend_numpy_alloc;
+    m.copyTo(temp);
+    p = &temp;
+  }
+  PyObject* o = (PyObject*)p->u->userdata;
+  Py_INCREF(o);
+  return o;
+}
 
 PyObject* pyopencv_from_bool(bool value) {
   return PyBool_FromLong(value);
@@ -77,6 +170,10 @@ PyObject* pyopencv_from_bool(bool value) {
 PYBIND11_MAKE_OPAQUE(std::vector<uint8_t>)
 
 PYBIND11_MODULE(NAME, m) {
+    if (_import_array() < 0) {
+      fprintf(stderr, "FATAL: numpy.core.multiarray import fail");
+      exit(1);
+    }
 
 #if 0
     py::enum_<librealuvc::usb_spec>(m, "USB_TYPE")
@@ -403,7 +500,7 @@ PYBIND11_MODULE(NAME, m) {
           auto& image = this_ref.get_reusable_image();
           //cv::Mat image;
           bool ok = this_ref.read(image);
-          PyObject* image_obj = import_cxx.pyopencv_from_mat_(image);
+          PyObject* image_obj = pyopencv_from_mat(image);
           auto tuple = Py_BuildValue("(NN)", pyopencv_from_bool(ok), image_obj);
           auto result = py::reinterpret_steal<py::object>(tuple);
           return result;
