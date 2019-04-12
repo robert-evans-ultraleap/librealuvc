@@ -6,8 +6,10 @@
 #include <librealuvc/realuvc.h>
 #include <opencv2/core/mat.hpp>
 #include <librealuvc/realuvc_driver.h>
+#include <chrono>
 #include <exception>
 #include <mutex>
+#include <thread>
 
 #if 0
 #define D(...) { }
@@ -25,7 +27,7 @@ uint32_t str2fourcc(const char* s) {
     uint32_t b = ((int)s[j] & 0xff);
     result |= (b << 8*(3-j));
   }
-  D("str2fourcc(\"%s\") -> 0x%x", s, result);
+  //D("str2fourcc(\"%s\") -> 0x%x", s, result);
   return result;
 }
 
@@ -229,11 +231,16 @@ bool VideoCapture::open(int index) {
   DevFrameFixup fixup = FIXUP_NORMAL;
   if ((vendor_id_ == 0xf182) && (product_id_ == 0x0003)) { // Leap Peripheral
     fixup = FIXUP_GRAY8_PIX_L_PIX_R;
-  } else if (vendor_id_ == 0x2936)  { // Leap Rigel
+  } else if( (vendor_id_ == 0x2936) && (product_id_ == 0x1202)) { // Leap Rigel
     fixup = FIXUP_GRAY8_ROW_L_ROW_R;
   }
-  istream_ = std::make_shared<VideoStream>(fixup);
+  // Set low-power sleep state
+  realuvc_->set_power_state(D3);
+  // Wait a while
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  // Set full-power state before using the device
   realuvc_->set_power_state(D0);
+  istream_ = std::make_shared<VideoStream>(fixup);
   return true;
 }
 
@@ -293,10 +300,8 @@ bool VideoCapture::read(cv::OutputArray image) {
       try {
         D("stream_on() ...");
         realuvc_->stream_on();
-        D("stream_on() done");
         D("start_callbacks() ...");
         realuvc_->start_callbacks();
-        D("start_callbacks() done");
         istream->is_streaming_ = true;
       } catch (std::exception e) {
         printf("ERROR: caught exception %s\n", e.what());
@@ -388,7 +393,7 @@ bool VideoCapture::set(int prop_id, double val) {
       return false;
   }
   } catch (std::exception& e) {
-    printf("EXCEPTION:VideoCapture::set %s\n", e.what());
+    printf("EXCEPTION: VideoCapture::set %s\n", e.what());
     throw;
   }
   return false;
