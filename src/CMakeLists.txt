@@ -43,13 +43,24 @@ target_link_libraries(${LRS_TARGET} ${OpenCV_LIBS})
 
 add_executable(
     mytest
-	    "${CMAKE_CURRENT_LIST_DIR}/mytest.cpp"
+       "${CMAKE_CURRENT_LIST_DIR}/mytest.cpp"
 )
 
 target_link_libraries(
     mytest
-	${LRS_TARGET}
-	${OpenCV_LIBS}
+        ${LRS_TARGET}
+        ${OpenCV_LIBS}
+)
+
+add_executable(
+    viewer
+       "${CMAKE_CURRENT_LIST_DIR}/viewer.cpp"
+)
+
+target_link_libraries(
+    viewer
+        ${LRS_TARGET}
+        ${OpenCV_LIBS}
 )
 
 

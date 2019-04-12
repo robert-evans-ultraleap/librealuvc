@@ -4,10 +4,9 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc.hpp>
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
-#include <cstrings>
-#include <optional>
 
 #if 1
 #define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
@@ -17,6 +16,42 @@
 
 using namespace librealuvc;
 using std::string;
+
+// std::optional<T> doesn't arrive until C++17 :-(
+
+template<typename T>
+class Optional {
+ private:
+  bool has_value_;
+  T value_;
+ 
+ public:
+  Optional() : has_value_(false) { }
+  Optional(const T& value) : has_value_(true), value_(value) { }
+  Optional& operator=(const T& value) {
+    has_value_ = true;
+    value_ = value;
+    return *this;
+  }
+  
+  bool operator==(const T& b) const { return (value_ == b); }
+  bool operator!=(const T& b) const { return (value_ != b); }
+  
+  bool has_value() const { return has_value_; }
+  
+  const T& value() const { return value_; }
+};
+
+static bool strcasediff(const char* pa, const char* pb) {
+  for (;;) {
+    char a = *pa;
+    char b = *pb;
+    if ((a == 0) && (b == 0)) return false;
+    if (('A' <= a) && (a <= 'Z')) a += 'a'-'A';
+    if (('A' <= b) && (b <= 'Z')) b += 'a'-'A';
+    if (a != b) return true;
+  }
+}
 
 class OptionParse {
  public:
@@ -62,15 +97,15 @@ class OptionParse {
   
   bool have_bool(bool* val) {
     if (!pos_) return false;
-    if (!strcasecmp(val, "false") ||
-        !strcasecmp(val, "off") ||
-        !strcasecmp(val, "no")) {
+    if (!strcasediff(pos_, "false") ||
+        !strcasediff(pos_, "off") ||
+        !strcasediff(pos_, "no")) {
       *val = false;
       return advance();
     }
-    if (!strcasecmp(val, "true") ||
-        !strcasecmp(val, "on") ||
-        !strcasecmp(val, "yes")) {
+    if (!strcasediff(pos_, "true") ||
+        !strcasediff(pos_, "on") ||
+        !strcasediff(pos_, "yes")) {
       *val = true;
       return advance();
     }
@@ -102,14 +137,12 @@ class OptionParse {
   }
 };
 
-template<typename T>
-
 class ViewerOptions {
  public:
-  std::optional<string> product_;
-  std::optional<double> fps_;
-  std::optional<int> height_;
-  std::optional<int> width_;
+  Optional<string> product_;
+  Optional<double> fps_;
+  Optional<int> height_;
+  Optional<int> width_;
  
  public:
   void usage() {
@@ -151,13 +184,9 @@ class ViewerOptions {
     }
   }
 
-  bool is_match(
 };
 
-ViewerOptions::ViewerOptions(int argc, char* argv[]) {
-}
-
-uint32_t str2fourcc(const char* s) {
+static uint32_t str2fourcc(const char* s) {
   uint32_t result = 0;
   for (int j = 0; j < 4; ++j) {
     uint32_t b = ((int)s[j] & 0xff);
@@ -165,8 +194,6 @@ uint32_t str2fourcc(const char* s) {
   }
   return result;
 }
-
-int nframe;
 
 #define VENDOR_RIGEL       0x2936
 #define VENDOR_MSI         0x5986
@@ -247,23 +274,24 @@ void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     if (!cap.open(id)) continue;
     bool match = false;
     if (opt.product_.has_value()) {
-      if      (!strcasecmp(opt.product_.c_str(), "leap") && is_leap(cap)) match = true;
-      else if (!strcasecmp(opt.product_.c_str(), "rigel") && is_rigel(cap)) match = true;
+      if      (!strcasediff(opt.product_.value().c_str(), "leap") && is_leap(cap)) match = true;
+      else if (!strcasediff(opt.product_.value().c_str(), "rigel") && is_rigel(cap)) match = true;
     } else if (is_leap(cap) || is_rigel(cap)) {
       match = true;
     }
     if (!match) {
       cap.release();
     } else {
-      config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt)
+      config_cap(cap, opt);
       break;
     }
   }
 }
 
 void view_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
+  cv::Mat mat;
   for (int count = 0;; ++count) {
-    ok = cap.read(mat);
+    bool ok = cap.read(mat);
     if (!ok) {
       D("cap.read() fail\n");
       break;
