@@ -3,6 +3,7 @@ import cv2                # `pip install opencv-python`
 import leapuvc            #  Ensure leapuvc.py is in this folder
 
 # Start the Leap Capture Thread
+#cv2.waitKey(20000)
 leap = leapuvc.leapImageThread()
 leap.start()
 

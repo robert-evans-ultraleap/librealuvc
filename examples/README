@@ -1,0 +1,25 @@
+
+1. Download pre-built Windows binaries
+   https://sourceforge.net/projects/opencvlibrary/files/4.0.1/opencv-4.0.1-vc14_vc15.exe/download
+
+2. Run the self-extracting executable - it will prompt for an install directory,
+   we'll use D:\xlibs
+   The binaries will be in D:\xlibs\opencv\build\x64\vc14\{bin,lib}
+   Python module in D:\xlibs\opencv\build\python\cv2\python-3.6\cv2.cp36-win_amd64.pyd
+
+3. There's a Windows batch-file to set temporary environment variables
+   D:\xlibs\opencv\build\setup_vars_opencv4.cmd
+   Edit env.bat if you're using a directory other than D:\xlibs
+   
+4. Once env.bat refers to the right setup_vars_opencv4.cmd, you should be able
+   to run minimum.bat or cameraControl.bat, and the scripts will set up the right
+   PATH and PYTHONPATH before calling python.
+
+5. Or you can set permanent variables like this
+ 
+   setx PATH "%PATH%;D:\xlibs\opencv\build\x64\vc14\bin"
+   setx PYTHONPATH "%PYTHONPATH%;D:\xlibs\opencv\python"
+   
+5. To configure cmake to build other software using these libraries,
+   append to CMAKE_PREFIX_PATH the directory "D:\xlibs\opencv\build", then
+   cmake's find_package will be able to find the OpenCVConfig.cmake

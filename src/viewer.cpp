@@ -5,14 +5,112 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/imgproc.hpp>
 #include <cstdio>
+#include <cstrings>
 
-#if 0
-#define D(...) { }
-#else
+#if 1
 #define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
+#else
+#define D(...) { }
 #endif
 
 using namespace librealuvc;
+using std::string;
+
+class OptionParse {
+ private:
+  int    argc_;
+  char** argv_;
+  int    idx_;
+  char*  pos_;
+
+ public:
+  OptionParse(int argc, char** argv) :
+    argc_(argc),
+    argv_(argv),
+    idx_(1),
+    pos_(nullptr) {
+  }
+  
+  bool advance() {
+    if (pos_ && (pos_ == argv_[idx_])) ++idx_;
+    pos_ = nullptr;
+    return true;
+  }
+
+  bool have_option(const char* short_name, const char* long_name) {
+    if (idx_ >= argc_) return false;
+    auto a = argv_[idx_];
+    auto len = strlen(a);
+    if ((len < 2) || (a[0] != '-')) return false;
+    if (a[1] == short_name[1]) {
+      if (len > 2) {
+        pos_ = &a[2];
+      } else {
+        ++idx_;
+        pos_ = ((idx_ < argc_) ? argv_[idx_] : nullptr);
+      }
+      return advance();
+    } else if (!strcmp(a, long_name)) {
+      ++idx_;
+      pos_ = ((idx_ < argc_) ? argv_[idx_] : nullptr);
+      return advance();
+    }
+    return false;
+  }
+  
+  bool have_bool(bool* val) {
+    if (!pos_) return false;
+    if (!strcasecmp(val, "false") ||
+        !strcasecmp(val, "off") ||
+        !strcasecmp(val, "no")) {
+      *val = false;
+      return advance();
+    }
+    if (!strcasecmp(val, "true") ||
+        !strcasecmp(val, "on") ||
+        !strcasecmp(val, "yes")) {
+      *val = true;
+      return advance();
+    }
+    return false;
+  }
+  
+  bool have_double(double* val) {
+    if (!pos_) return false;
+  }
+  
+  bool have_int(int* val) {
+    if (!pos_) return false;
+  }
+  
+  bool have_string(string* val) {
+    if (!pos_) return false;
+    *val = std::string(pos_);
+    return advance();
+  }
+  
+  bool have_end() {
+    return (idx_ >= argc_);
+  }
+};
+
+class ViewerOptions {
+ public:
+  
+ 
+ public:
+  ViewerOptions(int argc, char** argv) {
+    OptionParse p(argc, argv);
+    while (!p.have_end()) {
+      if (have_option("
+    }
+  }
+
+  bool is_match
+};
+
+ViewerOptions::ViewerOptions(int argc, char* argv[]) {
+}
 
 uint32_t str2fourcc(const char* s) {
   uint32_t result = 0;
@@ -34,50 +132,13 @@ int nframe;
 #define PRODUCT_C905       0x080a
 #define PRODUCT_PERIPHERAL 0x0003
 
-void show_blowup(const cv::Mat& mat) {
-  // Show small region around brightest pixel
-  static int old_x = 0;
-  static int old_y = 0;
-  uint8_t brightest = 0;
-  int best_row = 0;
-  int best_col = 0;
-  for (int row = 0; row < mat.rows; ++row) {
-    const uint8_t* p = mat.ptr(row);
-    for (int col = 0; col < mat.cols/2; ++col) {
-      if (brightest < p[col]) {
-        brightest = p[col];
-        best_row = row;
-        best_col = col;
-      }
-    }
-  }
-  printf("DEBUG: brightest %3d at %3d, %3d\n", brightest, best_col, best_row);
-  fflush(stdout);
-  int dx = 64;
-  int dy = 64;
-  int xlo = best_col-dx/2;
-  int ylo = best_row-dy/2;
-  if (xlo < 0) xlo = 0; else if (xlo > mat.cols-1-dx) xlo = mat.cols-1-dx;
-  if (ylo < 0) ylo = 0; else if (ylo > mat.rows-1-dy) ylo = mat.rows-1-dy;
-  int move_x = (xlo - old_x);
-  int move_y = (ylo - old_y);
-  if ((-4 <= move_x) && (move_x <= +4) && (-4 <= move_y) && (move_y <= +4)) {
-    // don't track small move
-  } else {
-    // jump at most half a frame
-    int far = (dx/2);
-    if (move_x < -far) move_x = -far; else if (move_x > +far) move_x = +far;
-    if (move_y < -far) move_y = -far; else if (move_y > +far) move_y = +far;
-    old_x += move_x;
-    old_y += move_y;
-  }
-  cv::Mat tmp(mat, cv::Rect(old_x, old_y, dx, dy));
-  cv::Mat blowup;
-  cv::resize(tmp, blowup, cv::Size(), 16.0, 16.0, cv::INTER_NEAREST);
-  cv::imshow("blowup", blowup);
+void open_camera(librealuvc::VideoCapture& camera, ViewerOptions& opt) {
 }
 
-int do_stuff() {
+void view_camera(librealuvc::VideoCapture& camera, ViewerOptions& opt) {
+}
+
+int view_camera() {
   bool ok;
   int camera_id = -1;
   librealuvc::VideoCapture cap;
@@ -153,11 +214,16 @@ int do_stuff() {
 }
 
 extern "C"
-int main() {
+int main(int argc, char* argv[]) {
+  ViewerOptions options(argc, argv);
   try {
-    do_stuff();
+    librealuvc::VideoCapture camera;
+    open_camera(camera, options);
+    if (camera.isOpened()) {
+      view_camera(camera, options);
+    }
   } catch (std::exception e) {
-	  printf("ERROR: caught exception %s\n", e.what());
+	  fprintf(stderr, "ERROR: caught exception %s\n", e.what());
   }
   cv::destroyAllWindows();
   return 0;

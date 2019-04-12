@@ -9,15 +9,34 @@ import pyrealuvc
 
 class leapImageThread(threading.Thread):
     '''A dedicated thread that handles retrieving imagery from an unlocked Leap Motion Peripheral'''
-    def __init__(self, source = 1, resolution = (640, 480), timeout=10.0):
+    def __init__(self, source = 1, resolution = (640, 480), timeout=4.0):
         '''Initialize Leap Image Capture'''
         threading.Thread.__init__(self)
         self.source = source
         self.cam = pyrealuvc.VideoCapture(self.source)
         self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, resolution[0])
         self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, resolution[1])
-        self.cam.set(cv2.CAP_PROP_FPS, 57.5)
         self.cam.set(cv2.CAP_PROP_CONVERT_RGB, False) # Does not work reliably in DirectShow :(
+        fps = 30.0
+        vid = self.cam.get_vendor_id()
+        pid = self.cam.get_product_id()
+        if (vid == 0x2936) and (pid == 0x1202):
+          # Rigel
+          if   (resolution == (800,800)): fps = 24.0
+          elif (resolution == (640,480)): fps = 45.0
+          elif (resolution == (680,286)): fps = 70.0
+          elif (resolution == (400,400)): fps = 85.0
+          elif (resolution == (384,384)): fps = 90.0
+          elif (resolution == (368,368)): fps = 100.0
+        elif (vid == 0xf182) and (pid == 0x0003):
+          # Peripheral
+          if   (resolution == (752,480)): fps = 50.0
+          elif (resolution == (640,480)): fps = 57.5
+          elif (resolution == (752,240)): fps = 100.0
+          elif (resolution == (640,240)): fps = 115.0
+          elif (resolution == (752,120)): fps = 190.0
+          elif (resolution == (640,120)): fps = 214.0
+        self.cam.set(cv2.CAP_PROP_FPS, fps)
         self.resolution = (int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH)), 
                            int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT)))
         self.frame = None
