@@ -224,16 +224,6 @@ struct Config {
 };
 
 Config config_leap[] = {
-  {  24.0, 800, 800 },
-  {  45.0, 640, 480 },
-  {  70.0, 680, 286 },
-  {  85.0, 400, 400 },
-  {  90.0, 384, 384 },
-  { 100.0, 368, 368 },
-  { 0, 0, 0 }
-};
-
-Config config_rigel[] = {
   {  50.0, 752, 480 },
   {  57.5, 640, 480 },
   { 100.0, 752, 240 },
@@ -241,6 +231,16 @@ Config config_rigel[] = {
   { 190.0, 752, 120 },
   { 214.0, 640, 120 },
   { 0, 0, 0}
+};
+
+Config config_rigel[] = {
+  {  24.0, 800, 800 },
+  {  45.0, 640, 480 },
+  {  70.0, 680, 286 },
+  {  85.0, 400, 400 },
+  {  90.0, 384, 384 },
+  { 100.0, 368, 368 },
+  { 0, 0, 0 }
 };
 
 Config config_default[] = {
@@ -257,6 +257,7 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     if (opt.width_.has_value()  && (opt.width_ != p->width_)) continue;
     if (opt.height_.has_value() && (opt.height_ != p->height_)) continue;
     // Everything matched
+    D("set fps %.1f width %d height %d", p->fps_, p->width_, p->height_);
     cap.set(cv::CAP_PROP_FOURCC, str2fourcc("YUY2"));
     cap.set(cv::CAP_PROP_FPS,          p->fps_);
     cap.set(cv::CAP_PROP_FRAME_WIDTH,  p->width_);
@@ -269,22 +270,22 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
 }
 
 void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
-  for (int id = 0;; ++id) {
-    if (id >= 8) break;
+  int id;
+  for (id = 0; id < 8; ++id) {
+    D("cap.open(%d) ...", id);
     if (!cap.open(id)) continue;
-    bool match = false;
     if (opt.product_.has_value()) {
-      if      (!strcasediff(opt.product_.value().c_str(), "leap") && is_leap(cap)) match = true;
-      else if (!strcasediff(opt.product_.value().c_str(), "rigel") && is_rigel(cap)) match = true;
+      if      (!strcasediff(opt.product_.value().c_str(), "leap") && is_leap(cap)) break;
+      else if (!strcasediff(opt.product_.value().c_str(), "rigel") && is_rigel(cap)) break;
     } else if (is_leap(cap) || is_rigel(cap)) {
-      match = true;
-    }
-    if (!match) {
-      cap.release();
-    } else {
-      config_cap(cap, opt);
       break;
     }
+    cap.release();
+  }
+  if (!cap.isOpened()) {
+    const char* s = (opt.product_.has_value() ? opt.product_.value().c_str() : "any");
+    fprintf(stderr, "ERROR: no camera device matching %s\n", s);
+    exit(1);
   }
 }
 
@@ -308,6 +309,9 @@ int main(int argc, char* argv[]) {
   try {
     librealuvc::VideoCapture cap;
     open_cap(cap, options);
+    if (cap.isOpened()) {
+      config_cap(cap, options);
+    }
     if (cap.isOpened()) {
       view_cap(cap, options);
     }
