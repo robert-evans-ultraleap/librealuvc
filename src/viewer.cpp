@@ -81,16 +81,19 @@ class OptionParse {
     if ((len < 2) || (a[0] != '-')) return false;
     if (a[1] == short_name[1]) {
       if (len > 2) {
+        ++idx_;
         pos_ = &a[2];
       } else {
         ++idx_;
         pos_ = ((idx_ < argc_) ? argv_[idx_] : nullptr);
       }
-      return advance();
+      D("have_option short_name %s pos_ %s", short_name, pos_ ? pos_ : "null");
+      return true;
     } else if (!strcmp(a, long_name)) {
       ++idx_;
       pos_ = ((idx_ < argc_) ? argv_[idx_] : nullptr);
-      return advance();
+      D("have_option long_name %s pos_ %s", long_name, pos_ ? pos_ : "null");
+      return true;
     }
     return false;
   }
@@ -123,6 +126,7 @@ class OptionParse {
     if (!pos_) return false;
     char* endp = pos_;
     *val = (int)strtol(pos_, &endp, 0);
+    D("have_int %d length %d", *val, endp-pos_);
     return ((endp > pos_) && (*endp == 0) && advance());
   }
   
@@ -145,7 +149,8 @@ class ViewerOptions {
   Optional<int> width_;
  
  public:
-  void usage() {
+  void usage(int line) {
+    D("usage(%d)", line);
     fprintf(
       stderr,
       "usage: viewer [--fps <num>] [--height <num>] [--width <num>] [--product <name>]\n"
@@ -163,23 +168,24 @@ class ViewerOptions {
     int ival;
     string sval;
     while (!p.have_end()) {
+      D("argv[%d] = '%s'", p.idx_, p.argv_[p.idx_]);
       if        (p.have_option("-?", "--help")) {
-        usage();
+        usage(__LINE__);
       } else if (p.have_option("-f", "--fps")) {
-        if (!p.have_double(&dval)) usage();
+        if (!p.have_double(&dval)) usage(__LINE__);
         fps_ = dval;
       } else if (p.have_option("-h", "--height")) {
-        if (!p.have_int(&ival)) usage();
+        if (!p.have_int(&ival)) usage(__LINE__);
         height_ = ival;
       } else if (p.have_option("-p", "--product")) {
-        if (!p.have_string(&sval)) usage();
+        if (!p.have_string(&sval)) usage(__LINE__);
         product_ = sval;
       } else if (p.have_option("-w", "--width")) {
-        if (!p.have_int(&ival)) usage();
+        if (!p.have_int(&ival)) usage(__LINE__);
         width_ = ival;
       } else {
         fprintf(stderr, "ERROR: unexpected command-line option '%s'\n", p.argv_[p.idx_]);
-        usage();
+        usage(__LINE__);
       }
     }
   }
