@@ -126,7 +126,7 @@ class OptionParse {
     if (!pos_) return false;
     char* endp = pos_;
     *val = (int)strtol(pos_, &endp, 0);
-    D("have_int %d length %d", *val, endp-pos_);
+    D("have_int %d length %d", *val, (uint)(endp-pos_));
     return ((endp > pos_) && (*endp == 0) && advance());
   }
   
@@ -143,10 +143,15 @@ class OptionParse {
 
 class ViewerOptions {
  public:
-  Optional<string> product_;
+  Optional<int>    analog_gain_;
+  Optional<int>    digital_gain_;
+  Optional<int>    exposure_;
   Optional<double> fps_;
-  Optional<int> height_;
-  Optional<int> width_;
+  Optional<bool>   gamma_;
+  Optional<int>    height_;
+  Optional<bool>   leds_;
+  Optional<int>    width_;
+  Optional<string> product_;
  
  public:
   void usage(int line) {
@@ -154,38 +159,61 @@ class ViewerOptions {
     fprintf(
       stderr,
       "usage: viewer [--fps <num>] [--height <num>] [--width <num>] [--product <name>]\n"
-      "  --fps <num>         frames-per-second\n"
-      "  --height <num>      frame height in pixels\n"
-      "  --width <num>       frame width in pixels\n"
-      "  --product <string>  choose rigel or leap device\n"
+      "  --analog_gain <num>   analog gain 16-63\n"
+      "  --digital_gain <num>  digital gain\n"
+      "  --exposure <num>      exposure in microseconds\n"
+      "  --fps <num>           frames-per-second\n"
+      "  --gamma <on|off>....  gamma-correction on or off\n"
+      "  --height <num>        frame height in pixels\n"
+      "  --leds <on|off>.....  led illumination on or off\n"
+      "  --width <num>         frame width in pixels\n"
+      "  --product <string>    choose rigel or leap device\n"
     );
-    exit(1);
+    throw std::exception("SILENT_EXIT");
   }
+
+#define USAGE() usage(__LINE__)
 
   ViewerOptions(int argc, char** argv) {
     OptionParse p(argc, argv);
+    bool bval;
     double dval;
     int ival;
     string sval;
     while (!p.have_end()) {
       D("argv[%d] = '%s'", p.idx_, p.argv_[p.idx_]);
       if        (p.have_option("-?", "--help")) {
-        usage(__LINE__);
+        USAGE();
+      } else if (p.have_option("-a", "--analog_gain")) {
+        if (!p.have_int(&ival)) USAGE();
+        analog_gain_ = ival;
+      } else if (p.have_option("-d", "--digital_gain")) {
+        if (!p.have_int(&ival)) USAGE();
+        digital_gain_ = ival;
+      } else if (p.have_option("-e", "--exposure")) {
+        if (!p.have_int(&ival)) USAGE();
+        exposure_ = ival;
       } else if (p.have_option("-f", "--fps")) {
-        if (!p.have_double(&dval)) usage(__LINE__);
+        if (!p.have_double(&dval)) USAGE();
         fps_ = dval;
+      } else if (p.have_option("-g", "--gamma")) {
+        if (!p.have_bool(&bval)) USAGE();
+        gamma_ = bval;
       } else if (p.have_option("-h", "--height")) {
-        if (!p.have_int(&ival)) usage(__LINE__);
+        if (!p.have_int(&ival)) USAGE();
         height_ = ival;
+      } else if (!p.have_option("-l", "--leds")) {
+        if (!p.have_bool(&bval)) USAGE();
+        leds_ = bval;
       } else if (p.have_option("-p", "--product")) {
-        if (!p.have_string(&sval)) usage(__LINE__);
+        if (!p.have_string(&sval)) USAGE();
         product_ = sval;
       } else if (p.have_option("-w", "--width")) {
-        if (!p.have_int(&ival)) usage(__LINE__);
+        if (!p.have_int(&ival)) USAGE();
         width_ = ival;
       } else {
         fprintf(stderr, "ERROR: unexpected command-line option '%s'\n", p.argv_[p.idx_]);
-        usage(__LINE__);
+        USAGE();
       }
     }
   }
@@ -268,11 +296,35 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     cap.set(cv::CAP_PROP_FPS,          p->fps_);
     cap.set(cv::CAP_PROP_FRAME_WIDTH,  p->width_);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, p->height_);
+    //
+    // Other settings from command-line options, note that the
+    // cv::CAP_PROP_CONTRAST and cv::CAP_PROP_ZOOM are used
+    // in a non-standard way to control leap/rigel settings.
+    //
+    if (opt.analog_gain_.has_value()) {
+      cap.set(cv::CAP_PROP_GAIN, opt.analog_gain_.value());
+    }
+    if (opt.digital_gain_.has_value()) {
+      cap.set(cv::CAP_PROP_BRIGHTNESS, opt.digital_gain_.value());
+    }
+    if (opt.exposure_.has_value()) {
+      cap.set(cv::CAP_PROP_ZOOM, opt.exposure_.value());
+    }
+    if (opt.gamma_.has_value()) {
+      cap.set(cv::CAP_PROP_GAMMA, opt.gamma_.value() ? 1 : 0);
+    }
+    if (opt.leds_.has_value()) {
+      int val = (opt.leds_.value() ? 1 : 0);
+      cap.set(cv::CAP_PROP_CONTRAST, 0x02 | (val << 6)); // left led
+      cap.set(cv::CAP_PROP_CONTRAST, 0x03 | (val << 6)); // middle led
+      cap.set(cv::CAP_PROP_CONTRAST, 0x04 | (val << 6)); // right led
+    }
     return;
   }
+  // Fall through without finding a matching (fps, width, height)
   fprintf(stderr, "ERROR: invalid fps, width, height\n");
   cap.release();
-  exit(1);
+  throw std::exception("SILENT_EXIT");
 }
 
 void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
@@ -291,21 +343,52 @@ void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
   if (!cap.isOpened()) {
     const char* s = (opt.product_.has_value() ? opt.product_.value().c_str() : "any");
     fprintf(stderr, "ERROR: no camera device matching %s\n", s);
-    exit(1);
+    throw std::exception("SILENT_EXIT");
   }
 }
 
+#define ESC 27
+
 void view_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
   cv::Mat mat;
+  bool stopped = false;
   for (int count = 0;; ++count) {
     bool ok = cap.read(mat);
     if (!ok) {
       D("cap.read() fail\n");
       break;
     }
-    cv::imshow("cap_LR", mat);
+    if (!stopped) {
+      cv::imshow("cap_LR", mat);
+    }
     int c = (int)cv::waitKey(1);
-    if ((c == 27) || (c == 'q')) break; // <ESC> or 'q' key
+    switch (c) {
+      case 'g':
+        if (stopped) {
+          stopped = false;
+          printf("-- go (enter 's' to stop) \n");
+          fflush(stdout);
+        }
+        break;
+      case 's':
+        if (!stopped) {
+          stopped = true;
+          printf("-- stop (enter 'g' to go)\n");
+          fflush(stdout);
+        }
+        break;
+      case 'q':
+      case ESC:
+        printf("-- quit\n");
+        fflush(stdout);
+        return;
+      default:
+        if ((' ' <= c) && (c <= '~')) {
+          printf("WARNING: key '%c' ignored, use 'g'=go, 's'=stop, 'q'=quit\n", c);
+          fflush(stdout);
+        }
+        break;
+    }
   }
 }
 
@@ -322,7 +405,9 @@ int main(int argc, char* argv[]) {
       view_cap(cap, options);
     }
   } catch (std::exception e) {
-	  fprintf(stderr, "ERROR: caught exception %s\n", e.what());
+    if (strcmp(e.what(), "SILENT_EXIT") != 0) {
+	    fprintf(stderr, "ERROR: caught exception %s\n", e.what());
+    }
   }
   cv::destroyAllWindows();
   return 0;

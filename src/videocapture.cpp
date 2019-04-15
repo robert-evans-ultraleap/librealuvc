@@ -135,6 +135,7 @@ VideoCapture::VideoCapture(const cv::String& filename, int api_preference) :
 }
 
 VideoCapture::~VideoCapture() {
+  release();
 }
 
 static double get_pu(const std::shared_ptr<uvc_device>& dev, ru_option opt) {
@@ -325,8 +326,20 @@ bool VideoCapture::read(cv::OutputArray image) {
 }
 
 void VideoCapture::release() {
-  if (is_opencv_) opencv_->release();
+  if (is_opencv_) {
+    opencv_->release();
+    opencv_.reset();
+  }
   if (is_realuvc_) {
+    auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
+    if (istream) { 
+      std::unique_lock<std::mutex> lock(istream->mutex_);
+      if (istream->is_streaming_) {
+        realuvc_->stop_callbacks();
+        istream->is_streaming_ = false;
+      }
+    }
+    istream_.reset();
     is_realuvc_ = false;
     realuvc_.reset();
   }
