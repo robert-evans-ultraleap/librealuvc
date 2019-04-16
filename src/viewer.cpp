@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#if 1
+#if 0
 #define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #else
 #define D(...) { }
@@ -402,13 +402,17 @@ int main(int argc, char* argv[]) {
       config_cap(cap, options);
     }
     if (cap.isOpened()) {
+      D("view_cap() ...");
       view_cap(cap, options);
+      D("view_cap() done");
     }
   } catch (std::exception e) {
+    D("caught exception %s", e.what());
     if (strcmp(e.what(), "SILENT_EXIT") != 0) {
 	    fprintf(stderr, "ERROR: caught exception %s\n", e.what());
     }
   }
+  D("cv::destroyAllWindows() ...");
   cv::destroyAllWindows();
   return 0;
 }

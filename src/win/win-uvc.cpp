@@ -42,6 +42,12 @@ The library will be compiled without the metadata support!\n")
 #pragma comment(lib, "mfreadwrite.lib")
 #pragma comment(lib, "mfuuid.lib")
 
+#if 0
+#define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
+#else
+#define D(...) { }
+#endif
+
 #define type_guid  MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID
 #define did_guid  MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK
 
@@ -232,11 +238,14 @@ namespace librealuvc
         STDMETHODIMP source_reader_callback::OnEvent(DWORD /*sidx*/, IMFMediaEvent* /*event*/) { return S_OK; }
         STDMETHODIMP source_reader_callback::OnFlush(DWORD)
         {
+            D("source_reader_callback::OnEvent() ...");
             auto owner = _owner.lock();
             if (owner)
             {
+                D("owner->_is_flushed.set()");
                 owner->_is_flushed.set();
             }
+            D("source_reader_callback::OnEvent() done");
             return S_OK;
         }
 
@@ -995,28 +1004,40 @@ namespace librealuvc
 
         wmf_uvc_device::~wmf_uvc_device()
         {
+            D("wmf_uvc_device::dtor() ...");
             try {
                 if (_streaming)
                 {
+                    D("flush() ...");
                     flush(MF_SOURCE_READER_ALL_STREAMS);
+                    D("flush() done");
                 }
+                D("set_power_state(D3) ...");
                 wmf_uvc_device::set_power_state(D3);
 
                 if (_source)
                 {
+                    D("_ks_controls.clear() ...");
                     _ks_controls.clear();
+                    D("_camera_control.Release() ...");
                     _camera_control.Release();
                     _camera_control = nullptr;
+                    D("_videoproc.Release() ...");
                     _video_proc.Release();
                     _video_proc = nullptr;
+                    D("_source.Release() ...");
                     _source.Release();
                     _source = nullptr;
+                    D("_reader.Release() ...");
                     _reader.Release();
                     _reader = nullptr;
+                    D("_reader_attrs.Release() ...");
                     _reader_attrs.Release();
                     _reader_attrs = nullptr;
+                    D("_activate.Release() ...");
                     _activate.Release();
                     _activate = nullptr;
+                    D("_device_attrs.Release() ...");
                     _device_attrs.Release();
                     _device_attrs = nullptr;
                 }
@@ -1025,6 +1046,7 @@ namespace librealuvc
             {
                 // TODO: Log
             }
+            D("wmf_uvc_device::dtor() done");
         }
 
         void wmf_uvc_device::probe_and_commit(stream_profile profile, frame_callback callback, int /*buffers*/)
@@ -1060,7 +1082,7 @@ namespace librealuvc
                     char fourcc_str[8];
                     for (int j = 0; j < 4; ++j) fourcc_str[j] = (device_fourcc >> (24-8*j)) & 0xff;
                     fourcc_str[4] = 0;
-                    printf("DEBUG: profile[%d] device_fourcc 0x%x \"%s\"\n", k, device_fourcc, fourcc_str);
+                    //printf("DEBUG: profile[%d] device_fourcc 0x%x \"%s\"\n", k, device_fourcc, fourcc_str);
 
                     if (device_fourcc != profile.format &&
                         (fourcc_map.count(device_fourcc) == 0 ||
@@ -1072,7 +1094,7 @@ namespace librealuvc
 
                     CHECK_HR(MFGetAttributeSize(pMediaType, MF_MT_FRAME_SIZE, &width, &height));
                     
-                    printf("DEBUG: profile[%d] width %u height %u\n", k, width, height);
+                    //printf("DEBUG: profile[%d] width %u height %u\n", k, width, height);
 
                     typedef struct frameRate {
                         unsigned int denominator;
@@ -1085,11 +1107,13 @@ namespace librealuvc
                     CHECK_HR(MFGetAttributeRatio(pMediaType, MF_MT_FRAME_RATE_RANGE_MIN, &frameRateMin.numerator, &frameRateMin.denominator));
                     CHECK_HR(MFGetAttributeRatio(pMediaType, MF_MT_FRAME_RATE_RANGE_MAX, &frameRateMax.numerator, &frameRateMax.denominator));
                     
+#if 0
                     printf("DEBUG: profile[%d] fpsMin %.1f fpsMax %.1f\n", 
                       k,
                       (1.0*frameRateMin.numerator)/frameRateMin.denominator,
                       (1.0*frameRateMax.numerator)/frameRateMax.denominator
                     );
+#endif
 
                     if ((width == profile.width) && (height == profile.height))
                     {
@@ -1222,6 +1246,7 @@ namespace librealuvc
 
         void wmf_uvc_device::close(stream_profile profile)
         {
+            D("wmf_uvc_device::close() ...");
             _is_started = false;
 
             check_connection();
@@ -1246,16 +1271,20 @@ namespace librealuvc
                 }
             }
             stop_stream_cleanup(profile, elem);
+            D("wmf_uvc_device::close() done");
         }
 
         // ReSharper disable once CppMemberFunctionMayBeConst
         void wmf_uvc_device::flush(int sIndex)
         {
+            D("wmf_uvc_device::flush(%d) ...", sIndex);
             if (is_connected(_info))
             {
                 if (_reader != nullptr)
                 {
+                    D("_reader->Flush() ...");
                     auto sts = _reader->Flush(sIndex);
+                    D("_reader->Flush() done");
                     if (sts != S_OK)
                     {
                         if (sts == MF_E_HW_MFT_FAILED_START_STREAMING)
@@ -1263,10 +1292,12 @@ namespace librealuvc
 
                         throw std::runtime_error(to_string() << "Flush failed" << sts);
                     }
-
+                    D("_is_flushed.wait() ...");
                     _is_flushed.wait(INFINITE);
+                    D("_is_flushed.wait() done");
                 }
             }
+            D("wmf_uvc_device::flush() done");
         }
 
         void wmf_uvc_device::check_connection() const

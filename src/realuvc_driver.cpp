@@ -1,10 +1,10 @@
 #include <librealuvc/realuvc_driver.h>
 #include <condition_variable>
 
-#if 1
-#define D(...) { }
+#if 0
+#define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #else
-#define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
+#define D(...) { }
 #endif
 
 namespace librealuvc {
@@ -23,7 +23,6 @@ class DevMatAllocator : public cv::MatAllocator {
     int dims, const int* sizes, int type, void* data,
     size_t* step, cv::AccessFlag flags, cv::UMatUsageFlags usage
   ) const {
-    D("DevMatAllocator::allocate A ...");
     auto alloc = cv::Mat::getDefaultAllocator();
     auto result = alloc->allocate(dims, sizes, type, data, step, flags, usage);
     if (result) result->currAllocator = alloc;
@@ -31,7 +30,6 @@ class DevMatAllocator : public cv::MatAllocator {
   }
   
   virtual bool allocate(cv::UMatData* data, cv::AccessFlag flags, cv::UMatUsageFlags usage) const {
-    D("DevMatAllocator::allocate B ...");
     auto alloc = cv::Mat::getDefaultAllocator();
     auto result = alloc->allocate(data, flags, usage);
     if (result) data->currAllocator = alloc;
@@ -44,8 +42,6 @@ class DevMatAllocator : public cv::MatAllocator {
     const size_t dstofs[], const size_t dststep[],
     bool sync
   ) const {
-    D("DevMatAllocator::copy() this %p dst currAllocator %p prevAllocator %p ...",
-      this, dst->currAllocator, dst->prevAllocator);
     auto alloc = (dst->currAllocator ? dst->currAllocator : cv::Mat::getDefaultAllocator());
     alloc->copy(
       src, dst, dims, sz, srcofs, srcstep, dstofs, dststep, sync
@@ -56,7 +52,6 @@ class DevMatAllocator : public cv::MatAllocator {
   // deallocate() is the only method with non-default behavior
   
   virtual void deallocate(cv::UMatData* data) const {
-    D("DevMatAllocator::deallocate(umatdata %p) DevFrame %p", data, data->handle);
     DevFrame* f = (DevFrame*)data->handle;
     data->handle = nullptr;
     if (f) delete f;
@@ -83,7 +78,7 @@ class DevMatAllocator : public cv::MatAllocator {
   virtual void unmap(cv::UMatData* data) const {
     // From reading the source code of OpenCV, it turns out that unmap()
     // is the method called when the refcount goes to zero.
-    D("DevMatAllocator::unmap(umatdata %p) DevFrame %p", data, data->handle);
+    //D("DevMatAllocator::unmap(umatdata %p) DevFrame %p", data, data->handle);
     DevFrame* f = (DevFrame*)data->handle;
     data->handle = nullptr;
     if (f) delete f;
