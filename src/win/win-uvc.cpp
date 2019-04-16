@@ -630,10 +630,10 @@ namespace librealuvc
                         auto hr = get_video_proc()->GetRange(pu.property, &min, &max, &step, &def, &caps);
                         if (value < min) {
                           printf("WARNING: processing-unit value %d limited to min %d\n", value, min);
-                          value = min;
+                          //value = min;
                         } else if (value > max) {
                           printf("WARNING: processing-unit value %d limited to max %d\n", value, max);
-                          value = max;
+                          //value = max;
                         }
                         hr = get_video_proc()->Set(pu.property, value, VideoProcAmp_Flags_Manual);
                         if (hr == DEVICE_NOT_READY_ERROR)
@@ -680,10 +680,10 @@ namespace librealuvc
                         auto hr = get_camera_control()->GetRange(ct.property, &min, &max, &step, &def, &caps);
                         if (value < min) {
                           printf("WARNING: camera-terminal value %d limited to min %d\n", value, min);
-                          value = min;
+                          //value = min;
                         } else if (value > max) {
                           printf("WARNING: camera-terminal value %d limited to max %d\n", value, max);
-                          value = max;
+                          //value = max;
                         }
                         
                         hr = get_camera_control()->Set(ct.property, value, CameraControl_Flags_Manual);

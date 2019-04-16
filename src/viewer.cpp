@@ -1,4 +1,3 @@
-
 #include <librealuvc/ru_videocapture.h>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -13,6 +12,8 @@
 #else
 #define D(...) { }
 #endif
+
+#define VERSION "1.0.1 [2019-04-15]"
 
 using namespace librealuvc;
 using std::string;
@@ -44,8 +45,8 @@ class Optional {
 
 static bool strcasediff(const char* pa, const char* pb) {
   for (;;) {
-    char a = *pa;
-    char b = *pb;
+    char a = *pa++;
+    char b = *pb++;
     if ((a == 0) && (b == 0)) return false;
     if (('A' <= a) && (a <= 'Z')) a += 'a'-'A';
     if (('A' <= b) && (b <= 'Z')) b += 'a'-'A';
@@ -158,14 +159,14 @@ class ViewerOptions {
     D("usage(%d)", line);
     fprintf(
       stderr,
-      "usage: viewer [--fps <num>] [--height <num>] [--width <num>] [--product <name>]\n"
+      "usage: viewer\n"
       "  --analog_gain <num>   analog gain 16-63\n"
       "  --digital_gain <num>  digital gain\n"
-      "  --exposure <num>      exposure in microseconds\n"
+      // "  --exposure <num>      exposure in microseconds\n"
       "  --fps <num>           frames-per-second\n"
-      "  --gamma <on|off>....  gamma-correction on or off\n"
+      // "  --gamma <on|off>....  gamma-correction on or off\n"
       "  --height <num>        frame height in pixels\n"
-      "  --leds <on|off>.....  led illumination on or off\n"
+      // "  --leds <on|off>.....  led illumination on or off\n"
       "  --width <num>         frame width in pixels\n"
       "  --product <string>    choose rigel or leap device\n"
     );
@@ -190,21 +191,27 @@ class ViewerOptions {
       } else if (p.have_option("-d", "--digital_gain")) {
         if (!p.have_int(&ival)) USAGE();
         digital_gain_ = ival;
+#if 0
       } else if (p.have_option("-e", "--exposure")) {
         if (!p.have_int(&ival)) USAGE();
         exposure_ = ival;
+#endif
       } else if (p.have_option("-f", "--fps")) {
         if (!p.have_double(&dval)) USAGE();
         fps_ = dval;
+#if 0
       } else if (p.have_option("-g", "--gamma")) {
         if (!p.have_bool(&bval)) USAGE();
         gamma_ = bval;
+#endif
       } else if (p.have_option("-h", "--height")) {
         if (!p.have_int(&ival)) USAGE();
         height_ = ival;
-      } else if (!p.have_option("-l", "--leds")) {
+#if 0
+      } else if (p.have_option("-l", "--leds")) {
         if (!p.have_bool(&bval)) USAGE();
         leds_ = bval;
+#endif
       } else if (p.have_option("-p", "--product")) {
         if (!p.have_string(&sval)) USAGE();
         product_ = sval;
@@ -291,7 +298,8 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     if (opt.width_.has_value()  && (opt.width_ != p->width_)) continue;
     if (opt.height_.has_value() && (opt.height_ != p->height_)) continue;
     // Everything matched
-    D("set fps %.1f width %d height %d", p->fps_, p->width_, p->height_);
+    printf("-- set fps %.1f width %d height %d\n", p->fps_, p->width_, p->height_);
+    fflush(stdout);
     cap.set(cv::CAP_PROP_FOURCC, str2fourcc("YUY2"));
     cap.set(cv::CAP_PROP_FPS,          p->fps_);
     cap.set(cv::CAP_PROP_FRAME_WIDTH,  p->width_);
@@ -308,7 +316,10 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
       cap.set(cv::CAP_PROP_BRIGHTNESS, opt.digital_gain_.value());
     }
     if (opt.exposure_.has_value()) {
-      cap.set(cv::CAP_PROP_ZOOM, opt.exposure_.value());
+      int val = opt.exposure_.value();
+      if (val < 10) val = 10;
+      if (val > 0xffff) val = 0xffff;
+      cap.set(cv::CAP_PROP_ZOOM, val);
     }
     if (opt.gamma_.has_value()) {
       cap.set(cv::CAP_PROP_GAMMA, opt.gamma_.value() ? 1 : 0);
@@ -394,6 +405,8 @@ void view_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
 
 extern "C"
 int main(int argc, char* argv[]) {
+  printf("viewer: Leap Motion leap/rigel viewer %s\n", VERSION);
+  fflush(stdout);
   ViewerOptions options(argc, argv);
   try {
     librealuvc::VideoCapture cap;

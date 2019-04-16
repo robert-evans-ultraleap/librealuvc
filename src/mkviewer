@@ -1,0 +1,8 @@
+#!/bin/bash
+dst=/d/rcownie/viewer
+rm -rf $dst
+mkdir $dst
+cd /d/xlibs/opencv/build/x64/vc15/bin
+cp -p *.dll $dst
+cd /d/rcownie/librealuvc-build/Release
+cp -p *.dll viewer.exe $dst

@@ -392,15 +392,17 @@ bool VideoCapture::set(int prop_id, double val) {
       return true;
     case cv::CAP_PROP_GAIN:
       ok = realuvc_->set_pu(RU_OPTION_GAIN, ival);
-      printf("DEBUG: set_pu(CAP_PROP_GAIN, %d) -> %s\n", ival, ok ? "true" : "false");
+      //printf("DEBUG: set_pu(RU_OPTION_GAIN, %d) -> %s\n", ival, ok ? "true" : "false");
       return true;
     case cv::CAP_PROP_GAMMA:
+      //printf("DEBUG: set_pu(RU_OPTION_GAMMA, %d) ...\n", ival);
       return realuvc_->set_pu(RU_OPTION_GAMMA, ival);
     case cv::CAP_PROP_SATURATION:
       return realuvc_->set_pu(RU_OPTION_SATURATION, ival);
     case cv::CAP_PROP_SHARPNESS:
       return realuvc_->set_pu(RU_OPTION_SHARPNESS, ival);
     case cv::CAP_PROP_ZOOM:
+      //printf("DEBUG: set_pu(RU_OPTION_ZOOM_ABSOLUTE, %d) ...\n", ival);
       return realuvc_->set_pu(RU_OPTION_ZOOM_ABSOLUTE, ival);
     // properties we will silently ignore
     case cv::CAP_PROP_CONVERT_RGB:
