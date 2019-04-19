@@ -1,3 +1,4 @@
+#include "option_parse.h"
 #include <librealuvc/ru_videocapture.h>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -13,134 +14,12 @@
 #define D(...) { }
 #endif
 
-#define VERSION "1.0.1 [2019-04-15]"
+#define VERSION "1.0.2 [2019-04-18]"
 
 using namespace librealuvc;
 using std::string;
-
-// std::optional<T> doesn't arrive until C++17 :-(
-
-template<typename T>
-class Optional {
- private:
-  bool has_value_;
-  T value_;
- 
- public:
-  Optional() : has_value_(false) { }
-  Optional(const T& value) : has_value_(true), value_(value) { }
-  Optional& operator=(const T& value) {
-    has_value_ = true;
-    value_ = value;
-    return *this;
-  }
-  
-  bool operator==(const T& b) const { return (value_ == b); }
-  bool operator!=(const T& b) const { return (value_ != b); }
-  
-  bool has_value() const { return has_value_; }
-  
-  const T& value() const { return value_; }
-};
-
-static bool strcasediff(const char* pa, const char* pb) {
-  for (;;) {
-    char a = *pa++;
-    char b = *pb++;
-    if ((a == 0) && (b == 0)) return false;
-    if (('A' <= a) && (a <= 'Z')) a += 'a'-'A';
-    if (('A' <= b) && (b <= 'Z')) b += 'a'-'A';
-    if (a != b) return true;
-  }
-}
-
-class OptionParse {
- public:
-  int    argc_;
-  char** argv_;
-  int    idx_;
-  char*  pos_;
-
- public:
-  OptionParse(int argc, char** argv) :
-    argc_(argc),
-    argv_(argv),
-    idx_(1),
-    pos_(nullptr) {
-  }
-  
-  bool advance() {
-    if (pos_ && (pos_ == argv_[idx_])) ++idx_;
-    pos_ = nullptr;
-    return true;
-  }
-
-  bool have_option(const char* short_name, const char* long_name) {
-    if (idx_ >= argc_) return false;
-    auto a = argv_[idx_];
-    auto len = strlen(a);
-    if ((len < 2) || (a[0] != '-')) return false;
-    if (a[1] == short_name[1]) {
-      if (len > 2) {
-        ++idx_;
-        pos_ = &a[2];
-      } else {
-        ++idx_;
-        pos_ = ((idx_ < argc_) ? argv_[idx_] : nullptr);
-      }
-      D("have_option short_name %s pos_ %s", short_name, pos_ ? pos_ : "null");
-      return true;
-    } else if (!strcmp(a, long_name)) {
-      ++idx_;
-      pos_ = ((idx_ < argc_) ? argv_[idx_] : nullptr);
-      D("have_option long_name %s pos_ %s", long_name, pos_ ? pos_ : "null");
-      return true;
-    }
-    return false;
-  }
-  
-  bool have_bool(bool* val) {
-    if (!pos_) return false;
-    if (!strcasediff(pos_, "false") ||
-        !strcasediff(pos_, "off") ||
-        !strcasediff(pos_, "no")) {
-      *val = false;
-      return advance();
-    }
-    if (!strcasediff(pos_, "true") ||
-        !strcasediff(pos_, "on") ||
-        !strcasediff(pos_, "yes")) {
-      *val = true;
-      return advance();
-    }
-    return false;
-  }
-  
-  bool have_double(double* val) {
-    if (!pos_) return false;
-    char* endp = pos_;
-    *val = strtod(pos_, &endp);
-    return ((endp > pos_) && (*endp == 0) && advance());
-  }
-  
-  bool have_int(int* val) {
-    if (!pos_) return false;
-    char* endp = pos_;
-    *val = (int)strtol(pos_, &endp, 0);
-    D("have_int %d length %d", *val, (uint)(endp-pos_));
-    return ((endp > pos_) && (*endp == 0) && advance());
-  }
-  
-  bool have_string(string* val) {
-    if (!pos_) return false;
-    *val = std::string(pos_);
-    return ((val->length() > 0) && advance());
-  }
-  
-  bool have_end() {
-    return (idx_ >= argc_);
-  }
-};
+using leap::Optional;
+using leap::OptionParse;
 
 class ViewerOptions {
  public:
@@ -177,52 +56,30 @@ class ViewerOptions {
 
   ViewerOptions(int argc, char** argv) {
     OptionParse p(argc, argv);
-    bool bval;
-    double dval;
-    int ival;
-    string sval;
     while (!p.have_end()) {
       D("argv[%d] = '%s'", p.idx_, p.argv_[p.idx_]);
-      if        (p.have_option("-?", "--help")) {
+      if (p.have_option("-?", "--help")) {
         USAGE();
-      } else if (p.have_option("-a", "--analog_gain")) {
-        if (!p.have_int(&ival)) USAGE();
-        analog_gain_ = ival;
-      } else if (p.have_option("-d", "--digital_gain")) {
-        if (!p.have_int(&ival)) USAGE();
-        digital_gain_ = ival;
+      } else if (p.have_option_value("-a", "--analog_gain",  analog_gain_)) {
+      } else if (p.have_option_value("-d", "--digital_gain", digital_gain_)) {
 #if 0
-      } else if (p.have_option("-e", "--exposure")) {
-        if (!p.have_int(&ival)) USAGE();
-        exposure_ = ival;
+      } else if (p.have_option_value("-e", "--exposure",     exposure_)) {
 #endif
-      } else if (p.have_option("-f", "--fps")) {
-        if (!p.have_double(&dval)) USAGE();
-        fps_ = dval;
+      } else if (p.have_option_value("-f", "--fps",          fps_)) {
 #if 0
-      } else if (p.have_option("-g", "--gamma")) {
-        if (!p.have_bool(&bval)) USAGE();
-        gamma_ = bval;
+      } else if (p.have_option_value("-g", "--gamma",        gamma_)) {
 #endif
-      } else if (p.have_option("-h", "--height")) {
-        if (!p.have_int(&ival)) USAGE();
-        height_ = ival;
+      } else if (p.have_option_value("-h", "--height",       height_)) {
 #if 0
-      } else if (p.have_option("-l", "--leds")) {
-        if (!p.have_bool(&bval)) USAGE();
-        leds_ = bval;
+      } else if (p.have_option_value("-l", "--leds",         leds_)) {
 #endif
-      } else if (p.have_option("-p", "--product")) {
-        if (!p.have_string(&sval)) USAGE();
-        product_ = sval;
-      } else if (p.have_option("-w", "--width")) {
-        if (!p.have_int(&ival)) USAGE();
-        width_ = ival;
+      } else if (p.have_option_value("-p", "--product",      product_)) {
+      } else if (p.have_option_value("-w", "--width",        width_)) {
       } else {
-        fprintf(stderr, "ERROR: unexpected command-line option '%s'\n", p.argv_[p.idx_]);
-        USAGE();
+        p.err_bad_option();
       }
     }
+    if (p.is_fail()) USAGE();
   }
 
 };
@@ -344,8 +201,8 @@ void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     D("cap.open(%d) ...", id);
     if (!cap.open(id)) continue;
     if (opt.product_.has_value()) {
-      if      (!strcasediff(opt.product_.value().c_str(), "leap") && is_leap(cap)) break;
-      else if (!strcasediff(opt.product_.value().c_str(), "rigel") && is_rigel(cap)) break;
+      if      (!strcmp(opt.product_.value().c_str(), "leap") && is_leap(cap)) break;
+      else if (!strcmp(opt.product_.value().c_str(), "rigel") && is_rigel(cap)) break;
     } else if (is_leap(cap) || is_rigel(cap)) {
       break;
     }

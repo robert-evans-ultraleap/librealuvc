@@ -55,6 +55,7 @@ target_link_libraries(
 add_executable(
     viewer
        "${CMAKE_CURRENT_LIST_DIR}/viewer.cpp"
+       "${CMAKE_CURRENT_LIST_DIR}/option_parse.cpp"
 )
 
 target_link_libraries(
