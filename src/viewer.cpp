@@ -234,7 +234,7 @@ void view_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
       case 'g':
         if (stopped) {
           stopped = false;
-          printf("-- go (enter 's' to stop) \n");
+          printf("-- go (enter 's' to stop)\n");
           fflush(stdout);
         }
         break;
