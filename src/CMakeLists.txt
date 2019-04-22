@@ -20,6 +20,8 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/../include)
 target_sources(${LRS_TARGET}
     PRIVATE
         "${CMAKE_CURRENT_LIST_DIR}/backend.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/driver_peripheral.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/driver_rigel.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/log.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/realuvc_driver.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/types.cpp"
@@ -36,7 +38,6 @@ target_sources(${LRS_TARGET}
         "${CMAKE_CURRENT_LIST_DIR}/win/win-usb.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/win/win-hid.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/win/win-backend.cpp"
-		
 )
 
 target_link_libraries(${LRS_TARGET} ${OpenCV_LIBS})

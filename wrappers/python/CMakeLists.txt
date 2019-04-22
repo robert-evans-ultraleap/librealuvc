@@ -66,6 +66,8 @@ set(RAW_RS_CPP
   pybackend.cpp
   pybackend_extras.cpp
   ../../src/backend.cpp
+  ../../src/driver_peripheral.cpp
+  ../../src/driver_rigel.cpp
   ../../src/linux/backend-hid.cpp
   ../../src/linux/backend-v4l2.cpp
   ../../src/log.cpp

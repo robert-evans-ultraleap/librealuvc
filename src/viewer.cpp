@@ -30,6 +30,7 @@ class ViewerOptions {
   Optional<bool>   gamma_;
   Optional<int>    height_;
   Optional<bool>   leds_;
+  Optional<int>    magnify_;
   Optional<int>    width_;
   Optional<string> product_;
  
@@ -73,6 +74,7 @@ class ViewerOptions {
 #if 0
       } else if (p.have_option_value("-l", "--leds",         leds_)) {
 #endif
+      } else if (p.have_option_value("-m", "--magnify",      magnify_)) {
       } else if (p.have_option_value("-p", "--product",      product_)) {
       } else if (p.have_option_value("-w", "--width",        width_)) {
       } else {
@@ -219,6 +221,8 @@ void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
 
 void view_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
   cv::Mat mat;
+  cv::Mat magnified;
+  int mag_factor = (opt.magnify_.has_value() ? opt.magnify_.value() : 1);
   bool stopped = false;
   for (int count = 0;; ++count) {
     bool ok = cap.read(mat);
@@ -227,7 +231,15 @@ void view_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
       break;
     }
     if (!stopped) {
-      cv::imshow("cap_LR", mat);
+      if (mag_factor <= 1) {
+        cv::imshow("cap_LR", mat);
+      } else {
+        double mag = (double)mag_factor;
+        cv::resize(mat, magnified, cv::Size(), mag, mag, cv::INTER_NEAREST);
+        char mag_name[32];
+        sprintf(mag_name, "cap_LR_x%d", mag_factor);
+        cv::imshow(mag_name, magnified);
+      }
     }
     int c = (int)cv::waitKey(1);
     switch (c) {

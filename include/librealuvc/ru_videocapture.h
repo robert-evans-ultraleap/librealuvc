@@ -33,6 +33,38 @@ class IVideoStream {
   virtual ~IVideoStream() { }
 };
 
+// A librealuvc::VideoCapture may refer to a device-specific
+// IPropertyDriver which may intercept the get/set calls.
+
+enum HandlerResult {
+  kHandlerNotDone,
+  kHandlerFalse,
+  kHandlerTrue
+};
+
+class IPropertyDriver {
+ public:
+  virtual ~IPropertyDriver() { }
+  
+  enum HandlerResult { kNotHandled, kHandlerTrue, kHandlerFalse };
+  
+  virtual int get_frame_fixup() { return 0; }
+  
+  virtual HandlerResult get_prop(int prop_id, double* val) = 0;
+  
+  virtual HandlerResult set_prop(int prop_id, double val) = 0;
+};
+
+typedef std::function<
+  shared_ptr<IPropertyDriver>(const shared_ptr<uvc_device>&)
+> PropertyDriverMaker;
+
+LIBREALUVC_EXPORT void register_property_driver(
+  uint16_t vendor_id,
+  uint16_t product_id,
+  PropertyDriverMaker maker
+);
+
 class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
  protected:
   bool is_opencv_;
@@ -41,6 +73,7 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   int vendor_id_;
   int product_id_;
   shared_ptr<librealuvc::uvc_device> realuvc_;
+  shared_ptr<IPropertyDriver> driver_;
   shared_ptr<IVideoStream> istream_;
   cv::Mat reusable_image_;
   

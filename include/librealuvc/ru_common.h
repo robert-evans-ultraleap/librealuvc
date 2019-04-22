@@ -44,6 +44,16 @@ struct frame_object {
   ru_time_t   backend_time;
 };
 
+#define RU_FOURCC(c3, c2, c1, c0) ( \
+  (((int32_t)(c3)) << 24) | \
+  (((int32_t)(c2)) << 16) | \
+  (((int32_t)(c1)) <<  8) | \
+  ((int32_t)c0) \
+)
+
+#define RU_FOURCC_YUY2 RU_FOURCC('Y', 'U', 'Y', '2')
+#define RU_FOURCC_NV12 RU_FOURCC('N', 'V', '1', '2')
+
 typedef std::tuple<uint32_t, uint32_t, uint32_t, uint32_t> stream_profile_tuple;
 
 class LIBREALUVC_EXPORT stream_profile {

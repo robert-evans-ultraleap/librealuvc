@@ -6,8 +6,10 @@
 #include <librealuvc/realuvc.h>
 #include <opencv2/core/mat.hpp>
 #include <librealuvc/realuvc_driver.h>
+#include "drivers.h"
 #include <chrono>
 #include <exception>
+#include <map>
 #include <mutex>
 #include <thread>
 
@@ -19,16 +21,10 @@
 
 namespace librealuvc {
 
-namespace {
+using std::shared_ptr;
+using std::string;
 
-uint32_t str2fourcc(const char* s) {
-  uint32_t result = 0;
-  for (int j = 0; j < 4; ++j) {
-    uint32_t b = ((int)s[j] & 0xff);
-    result |= (b << 8*(3-j));
-  }
-  return result;
-}
+namespace {
 
 const char* prop_name(int prop_id) {
   switch (prop_id) {
@@ -84,11 +80,46 @@ const char* prop_name(int prop_id) {
   }
 }
 
+class PropertyDriverTable {
+ public:
+  std::mutex mutex_;
+  std::map<uint32_t, PropertyDriverMaker> map_;
+ 
+ public:
+  PropertyDriverTable() {
+    import_driver_peripheral();
+    import_driver_rigel();
+  }
+  
+  uint32_t pack_id(uint16_t vid, uint16_t pid) {
+    return (((uint32_t)vid)<<16) | pid;
+  }
+
+  shared_ptr<IPropertyDriver> make_driver(
+    uint16_t vid, uint16_t pid, const shared_ptr<uvc_device>& realuvc
+  ) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    auto iter = map_.find(pack_id(vid, pid));
+    if (iter != map_.end()) {
+      return iter->second(realuvc);
+    }
+    return shared_ptr<IPropertyDriver>();
+  }
+};
+
+PropertyDriverTable driver_table;
+
 // A realuvc-managed device will pass frame buffers by callback. These will
 // wrapped in a cv::Mat and queued until a VideoCapture::read(), 
 // VideoCapture::retrieve(), or being dropped due to queue overflow.
 
 } // end anon
+
+LIBREALUVC_EXPORT void register_property_driver(uint16_t vid, uint16_t pid, PropertyDriverMaker maker) {
+  auto& table = driver_table;
+  std::unique_lock<std::mutex> lock(table.mutex_);
+  table.map_[table.pack_id(vid, pid)] = maker;
+}
 
 class VideoStream : public IVideoStream {
  public:
@@ -104,7 +135,7 @@ class VideoStream : public IVideoStream {
     profile_.width = 640;
     profile_.height = 480;
     profile_.fps = 30;
-    profile_.format = str2fourcc("YUY2" /* "I420" */);
+    profile_.format = RU_FOURCC_YUY2;
   }
 
   virtual ~VideoStream() { }
@@ -151,6 +182,16 @@ double VideoCapture::get(int prop_id) const {
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   std::unique_lock<std::mutex> lock(istream->mutex_);
   //printf("DEBUG: VideoCapture::get(%s) ...\n", prop_name(prop_id)); fflush(stdout);
+  if (driver_) {
+    // The driver can implement device-specific behavior for some prop_id's
+    // while falling through to the default behavior for others.
+    double val = 0.0;
+    switch (driver_->get_prop(prop_id, &val)) {
+      case kHandlerFalse: return 0.0;
+      case kHandlerTrue:  return val;
+      default: break;
+    }
+  }
   switch (prop_id) {
     // properties which we can handle
     case cv::CAP_PROP_BRIGHTNESS:
@@ -227,6 +268,7 @@ bool VideoCapture::open(int index) {
   is_realuvc_ = true;
   vendor_id_ = info[index].vid;
   product_id_ = info[index].pid;
+  driver_ = driver_table.make_driver(vendor_id_, product_id_, realuvc_);
   // Kludge for the weird frame formats returned by Leap Peripheral/Rigel
   DevFrameFixup fixup = FIXUP_NORMAL;
   if ((vendor_id_ == 0xf182) && (product_id_ == 0x0003)) { // Leap Peripheral
@@ -370,6 +412,15 @@ bool VideoCapture::set(int prop_id, double val) {
   std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
   //printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+  if (driver_) {
+    // The driver can implement device-specific behavior for some prop_id's
+    // while falling through to the default behavior for others.
+    switch (driver_->set_prop(prop_id, val)) {
+      case kHandlerFalse: return false;
+      case kHandlerTrue:  return true;
+      default: break;
+    }
+  }
   bool ok = false;
   switch (prop_id) {
     // properties which we can handle
