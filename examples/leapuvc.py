@@ -7,6 +7,11 @@ import cv2
 from scipy.optimize import curve_fit
 import pyrealuvc
 
+CAP_PROP_LEAP_HDR   = 101
+CAP_PROP_LEAP_LED_L = 102
+CAP_PROP_LEAP_LED_M = 103
+CAP_PROP_LEAP_LED_R = 104
+
 class leapImageThread(threading.Thread):
     '''A dedicated thread that handles retrieving imagery from an unlocked Leap Motion Peripheral'''
     def __init__(self, source = 1, resolution = (640, 480), timeout=4.0):
@@ -48,6 +53,11 @@ class leapImageThread(threading.Thread):
         self.running = False
         self.doYUYConversion = source == cv2.CAP_DSHOW # Not implemented!
         self.embeddedLine = None
+        self.CAP_PROP_LEAP_HDR   = 101
+        self.CAP_PROP_LEAP_LED_L = 102
+        self.CAP_PROP_LEAP_LED_M = 103
+        self.CAP_PROP_LEAP_LED_R = 104
+
     def run(self):
         self.running = True
         while(time.time() - self.timeoutTimer < self.timeout):
@@ -84,7 +94,7 @@ class leapImageThread(threading.Thread):
         return self.cam.set(param, value)
     def setExposure(self, exposureUS):
         '''Sets the sensor's exposure in microseconds (up to 65535). \n(param, exposureUS) -> (ret)'''
-        return self.cam.set(cv2.CAP_PROP_ZOOM, max(10, exposureUS))
+        return self.cam.set(cv2.CAP_PROP_EXPOSURE, max(10, exposureUS))
     def setGammaEnabled(self, gammaEnabled):
         '''Sets whether the image will be in a non-linear color space approximating sqrt(x) (or a linear color space if gammaEnabled is False). \n(param, gammaEnabled) -> (ret)'''
         return self.cam.set(cv2.CAP_PROP_GAMMA, 1 if gammaEnabled else 0)
@@ -108,19 +118,19 @@ class leapImageThread(threading.Thread):
         return self.set(cv2.CAP_PROP_CONTRAST, ((selector) | ((value) << 6)))
     def setHDR(self, enabled):
         '''Sets the HDR Parameter \n(enabled) -> (ret)'''
-        return self.setLEDsHDRorRotate(0, 1 if enabled else 0)
+        return self.cam.set(self.CAP_PROP_LEAP_HDR, 1 if enabled else 0)
     def set180Rotation(self, enabled):
         '''Flips the image 180 degrees (calibrations do NOT flip!) \n(enabled) -> (ret)'''
         return self.setLEDsHDRorRotate(1, 1 if enabled else 0)
     def setLeftLED(self, enabled):
         '''Controls the Left LED. \n(enabled) -> (ret)'''
-        return self.setLEDsHDRorRotate(2, 1 if enabled else 0)
+        return self.cam.set(self.CAP_PROP_LEAP_LED_L, 1 if enabled else 0)
     def setCenterLED(self, enabled):
         '''Controls the Center LED. \n(enabled) -> (ret)'''
-        return self.setLEDsHDRorRotate(3, 1 if enabled else 0)
+        return self.cam.set(self.CAP_PROP_LEAP_LED_M, 1 if enabled else 0)
     def setRightLED(self, enabled):
         '''Controls the Right LED. \n(enabled) -> (ret)'''
-        return self.setLEDsHDRorRotate(4, 1 if enabled else 0)
+        return self.cam.set(self.CAP_PROP_LEAP_LED_R, 1 if enabled else 0)
     def setVerticalCenter(self, value):
         '''Changes the Vertical Center. \n(value) -> (ret)'''
         return self.setLEDsHDRorRotate(5, value)
@@ -133,7 +143,6 @@ class leapImageThread(threading.Thread):
     def setGain(self, gain):
         '''Specifies the analog gain as a scalar, between 16 and 63. \n(enabled) -> (ret)'''
         return self.set(cv2.CAP_PROP_GAIN, gain)
-        #return self.setGainFPSRatioOrDFrameInterval(0x4000, gain)
 
     # These parameters seem to be out-of-date
     #def setGainFPSRatioOrDFrameInterval(self, selector, value):

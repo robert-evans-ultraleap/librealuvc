@@ -74,7 +74,13 @@ const char* prop_name(int prop_id) {
     PROP(WHITE_BALANCE_BLUE_U)
     PROP(WHITE_BALANCE_RED_V)
     PROP(ZOOM)
-#undef PRO
+#undef PROP
+#define PROP_LEAP(x) case librealuvc::CAP_PROP_LEAP_##x: return "CAP_PROP_LEAP_" #x;
+    PROP_LEAP(HDR)
+    PROP_LEAP(LED_L)
+    PROP_LEAP(LED_M)
+    PROP_LEAP(LED_R)
+#undef PROP_LEAP
     default:
       return("UNKNOWN");
   }
@@ -411,7 +417,7 @@ bool VideoCapture::set(int prop_id, double val) {
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
-  //printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+  printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
   if (driver_) {
     // The driver can implement device-specific behavior for some prop_id's
     // while falling through to the default behavior for others.

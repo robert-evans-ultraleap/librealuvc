@@ -65,6 +65,15 @@ LIBREALUVC_EXPORT void register_property_driver(
   PropertyDriverMaker maker
 );
 
+// Leap-specific device controls taking care not to match
+enum CapPropLeap {
+  CAP_PROP_LEAP_BASE  = 100,
+  CAP_PROP_LEAP_HDR   = 101,
+  CAP_PROP_LEAP_LED_L = 102,
+  CAP_PROP_LEAP_LED_M = 103,
+  CAP_PROP_LEAP_LED_R = 104,
+};
+
 class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
  protected:
   bool is_opencv_;
