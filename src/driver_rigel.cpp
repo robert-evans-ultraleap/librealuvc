@@ -27,6 +27,10 @@ static int32_t flag(double val) {
   return ((val == 0.0) ? 0 : 1);
 }
 
+static const int CY_FX_UVC_PU_GAIN_SELECTOR_GAIN  = 0x4000;
+static const int CY_FX_UVC_PU_GAIN_SELECTOR_FOCUS = 0x8000;
+static const int CY_FX_UVC_PU_GAIN_SELECTOR_WHITE = 0xc000;
+
 class PropertyDriverRigel : public IPropertyDriver {
  private:
   shared_ptr<uvc_device> dev_;
@@ -88,9 +92,13 @@ class PropertyDriverRigel : public IPropertyDriver {
       case cv::CAP_PROP_EXPOSURE:
         ok = dev_->set_pu(RU_OPTION_ZOOM_ABSOLUTE, saturate(val, 10, 0xffff));
         break;
-      case cv::CAP_PROP_GAIN:
-        ok = dev_->set_pu(RU_OPTION_GAIN, saturate(val, 16, 63));
+      case cv::CAP_PROP_GAIN: {
+        ok = dev_->set_pu(
+          RU_OPTION_GAIN,
+          CY_FX_UVC_PU_GAIN_SELECTOR_GAIN | saturate(val, 16, 63)
+        );
         break;
+      }
       case cv::CAP_PROP_GAMMA:
         ok = dev_->set_pu(RU_OPTION_GAMMA, flag(val));
         break;

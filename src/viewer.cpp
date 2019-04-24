@@ -28,6 +28,7 @@ class ViewerOptions {
   Optional<int>    exposure_;
   Optional<double> fps_;
   Optional<bool>   gamma_;
+  Optional<bool>   hdr_;
   Optional<int>    height_;
   Optional<bool>   leds_;
   Optional<int>    magnify_;
@@ -42,13 +43,14 @@ class ViewerOptions {
       "usage: viewer\n"
       "  --analog_gain <num>   analog gain 16-63\n"
       "  --digital_gain <num>  digital gain\n"
-      // "  --exposure <num>      exposure in microseconds\n"
+      "  --exposure <num>      exposure in microseconds\n"
       "  --fps <num>           frames-per-second\n"
-      // "  --gamma <on|off>....  gamma-correction on or off\n"
+      "  --gamma <on|off>      gamma-correction on or off\n"
+      "  --hdr <on|off>        high dynamic range on or off\n"
       "  --height <num>        frame height in pixels\n"
-      // "  --leds <on|off>.....  led illumination on or off\n"
+      "  --leds <on|off>.....  led illumination on or off\n"
+      "  --product <string>    choose rigel or peripheral device\n"
       "  --width <num>         frame width in pixels\n"
-      "  --product <string>    choose rigel or leap device\n"
     );
     throw std::exception("SILENT_EXIT");
   }
@@ -63,17 +65,12 @@ class ViewerOptions {
         USAGE();
       } else if (p.have_option_value("-a", "--analog_gain",  analog_gain_)) {
       } else if (p.have_option_value("-d", "--digital_gain", digital_gain_)) {
-#if 0
       } else if (p.have_option_value("-e", "--exposure",     exposure_)) {
-#endif
       } else if (p.have_option_value("-f", "--fps",          fps_)) {
-#if 0
       } else if (p.have_option_value("-g", "--gamma",        gamma_)) {
-#endif
+      } else if (p.have_option_value("-z", "--hdr",          hdr_)) {
       } else if (p.have_option_value("-h", "--height",       height_)) {
-#if 0
       } else if (p.have_option_value("-l", "--leds",         leds_)) {
-#endif
       } else if (p.have_option_value("-m", "--magnify",      magnify_)) {
       } else if (p.have_option_value("-p", "--product",      product_)) {
       } else if (p.have_option_value("-w", "--width",        width_)) {
@@ -164,9 +161,7 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     cap.set(cv::CAP_PROP_FRAME_WIDTH,  p->width_);
     cap.set(cv::CAP_PROP_FRAME_HEIGHT, p->height_);
     //
-    // Other settings from command-line options, note that the
-    // cv::CAP_PROP_CONTRAST and cv::CAP_PROP_ZOOM are used
-    // in a non-standard way to control leap/rigel settings.
+    // Other settings from command-line options.
     //
     if (opt.analog_gain_.has_value()) {
       cap.set(cv::CAP_PROP_GAIN, opt.analog_gain_.value());
@@ -178,16 +173,19 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
       int val = opt.exposure_.value();
       if (val < 10) val = 10;
       if (val > 0xffff) val = 0xffff;
-      cap.set(cv::CAP_PROP_ZOOM, val);
+      cap.set(cv::CAP_PROP_EXPOSURE, val);
     }
     if (opt.gamma_.has_value()) {
       cap.set(cv::CAP_PROP_GAMMA, opt.gamma_.value() ? 1 : 0);
     }
+    if (opt.hdr_.has_value()) {
+      cap.set(librealuvc::CAP_PROP_LEAP_HDR, opt.hdr_.value() ? 1 : 0);
+    }
     if (opt.leds_.has_value()) {
-      int val = (opt.leds_.value() ? 1 : 0);
-      cap.set(cv::CAP_PROP_CONTRAST, 0x02 | (val << 6)); // left led
-      cap.set(cv::CAP_PROP_CONTRAST, 0x03 | (val << 6)); // middle led
-      cap.set(cv::CAP_PROP_CONTRAST, 0x04 | (val << 6)); // right led
+      double val = (opt.leds_.value() ? 1 : 0);
+      cap.set(librealuvc::CAP_PROP_LEAP_LED_L, val);
+      cap.set(librealuvc::CAP_PROP_LEAP_LED_M, val);
+      cap.set(librealuvc::CAP_PROP_LEAP_LED_R, val);
     }
     return;
   }
@@ -204,6 +202,7 @@ void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     if (!cap.open(id)) continue;
     if (opt.product_.has_value()) {
       if      (!strcmp(opt.product_.value().c_str(), "leap") && is_leap(cap)) break;
+      else if (!strcmp(opt.product_.value().c_str(), "peripheral") && is_leap(cap)) break;
       else if (!strcmp(opt.product_.value().c_str(), "rigel") && is_rigel(cap)) break;
     } else if (is_leap(cap) || is_rigel(cap)) {
       break;
