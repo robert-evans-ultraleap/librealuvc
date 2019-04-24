@@ -1,11 +1,5 @@
 #pragma once
-#include <stdint.h>
-
-#ifdef __cplusplus
-#define LFW_DECLARE_ENUM(x, type) enum x : type
-#else
-#define LFW_DECLARE_ENUM(x, type) enum x
-#endif
+#include <cstdint>
 
 #pragma pack(1)
 
@@ -541,7 +535,7 @@ typedef struct _IMU_CALIBRATION_DATA {
 typedef LEAP_DEFAULT_RESOLUTION LEAP_DEFAULT_RESOLUTION_ARRAY[LEAP_DEFAULT_RESOLUTION_SLOTS];
 
 // Leap Motion extension unit:
-LFW_DECLARE_ENUM(LEAP_XU, unsigned int) {
+enum LEAP_XU : unsigned int {
   // OV580 extension unit definitions:
   LEAP_XU_UNDEFINED = 0x00,
   LEAP_XU_STROBE_INTERVAL = 0x03,

@@ -5,6 +5,7 @@
 #include <librealuvc/ru_uvc.h>
 #include <librealuvc/ru_videocapture.h>
 #include <cstdio>
+#include "leap_xu.h"
 
 #if 1
 #define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
@@ -34,18 +35,18 @@ static const int CY_FX_UVC_PU_GAIN_SELECTOR_WHITE = 0xc000;
 class PropertyDriverRigel : public IPropertyDriver {
  private:
   shared_ptr<uvc_device> dev_;
-  double hdr_;
-  double led_l_;
-  double led_m_;
-  double led_r_;
+  extension_unit leap_xu_;
+  double leds_;
  public:
   PropertyDriverRigel(const shared_ptr<uvc_device>& dev) :
     dev_(dev),
-    hdr_(0),
-    led_l_(1),
-    led_m_(1),
-    led_r_(1) {
+    leds_(0) {
     D("PropertyDriverRigel::ctor() ...");
+    leap_xu_.subdevice = 0;
+    leap_xu_.unit = 1;
+    leap_xu_.node = 4;
+    leap_xu_.id = guid LEAP_XU_GUID;
+    dev_->init_xu(leap_xu_);
   }
 
   int get_frame_fixup() override {
@@ -53,33 +54,30 @@ class PropertyDriverRigel : public IPropertyDriver {
   }
   
   HandlerResult get_prop(int prop_id, double* val) override {
-    bool ok = false;
+    bool ok = true;
     int32_t ival = 0;
     switch (prop_id) {
-      case cv::CAP_PROP_EXPOSURE:
-        ok = dev_->get_pu(RU_OPTION_ZOOM_ABSOLUTE, ival);
-        *val = (double)ival;
+      case cv::CAP_PROP_EXPOSURE: {
+        uint16_t tmp = 0;
+        ok = dev_->get_xu(leap_xu_, LEAP_XU_EXPOSURE_CONTROL, (uint8_t*)&tmp, sizeof(tmp));
+        *val = (double)tmp;
         break;
+      }
       case cv::CAP_PROP_GAIN:
         ok = dev_->get_pu(RU_OPTION_GAIN, ival);
         *val = (double)ival;
         break;
       case cv::CAP_PROP_GAMMA:
-        ok = dev_->get_pu(RU_OPTION_GAMMA, ival);
-        *val = (double)ival;
+        *val = 0.0;
         break;
       case CAP_PROP_LEAP_HDR:
-        *val = hdr_;
-        return kHandlerTrue;
+        *val = 0.0;
+        break;
       case CAP_PROP_LEAP_LED_L:
-        *val = led_l_;
-        return kHandlerTrue;
       case CAP_PROP_LEAP_LED_M:
-        *val = led_m_;
-        return kHandlerTrue;
       case CAP_PROP_LEAP_LED_R:
-        *val = led_r_;
-        return kHandlerTrue;
+        *val = leds_;
+        break;
       default:
         return kNotHandled;
     }
@@ -87,36 +85,45 @@ class PropertyDriverRigel : public IPropertyDriver {
   }
   
   HandlerResult set_prop(int prop_id, double val) override {
-    bool ok = false;
+    bool ok = true;
+    int32_t ival;
     switch (prop_id) {
-      case cv::CAP_PROP_EXPOSURE:
-        ok = dev_->set_pu(RU_OPTION_ZOOM_ABSOLUTE, saturate(val, 10, 0xffff));
+      case cv::CAP_PROP_EXPOSURE: {
+        // Exposure goes through set_xu
+        uint16_t tmp = (uint16_t)saturate(val, 10, 0xffff);
+        ok = dev_->set_xu(leap_xu_, LEAP_XU_EXPOSURE_CONTROL, (uint8_t*)&tmp, sizeof(tmp));
         break;
+      }
       case cv::CAP_PROP_GAIN: {
-        ok = dev_->set_pu(
-          RU_OPTION_GAIN,
-          CY_FX_UVC_PU_GAIN_SELECTOR_GAIN | saturate(val, 16, 63)
-        );
+        ival = (int)val;
+        int32_t code;
+        if      (ival <  16) code = 0x00;
+        else if (ival <  32) code = 0x00 + (ival-16);
+        else if (ival <  63) code = 0x10 + ((ival- 31)>>1);
+        else if (ival < 126) code = 0x20 + ((ival- 62)>>2);
+        else if (ival < 252) code = 0x30 + ((ival-124)>>3);
+        else                 code = 0x40 + ((ival-248)>>4);
+        D("set_pu(RU_OPTION_GAIN, 0x%04x) ...", (int)code);
+        ok = dev_->set_pu(RU_OPTION_GAIN, code);
         break;
       }
       case cv::CAP_PROP_GAMMA:
-        ok = dev_->set_pu(RU_OPTION_GAMMA, flag(val));
+        // No hardware gamma
+        ok = ((val == 0.0) ? true : false);
         break;
       case CAP_PROP_LEAP_HDR:
-        hdr_ = val;
-        ok = dev_->set_pu(RU_OPTION_CONTRAST, 0x0 | (flag(val)<<6));
+        // No hardware HDR
+        ok = ((val == 0.0) ? true : false);
         break;
       case CAP_PROP_LEAP_LED_L:
-        led_l_ = val;
-        ok = dev_->set_pu(RU_OPTION_CONTRAST, 0x2 | (flag(val)<<6));
-        break;
       case CAP_PROP_LEAP_LED_M:
-        led_l_ = val;
-        ok = dev_->set_pu(RU_OPTION_CONTRAST, 0x3 | (flag(val)<<6));
-        break;
       case CAP_PROP_LEAP_LED_R:
-        led_l_ = val;
-        ok = dev_->set_pu(RU_OPTION_CONTRAST, 0x4 | (flag(val)<<6));
+        if (leds_ != val) {
+          leds_ = val;
+          // LED control goes through set_xu
+          uint8_t tmp = flag(val);
+          ok = dev_->set_xu(leap_xu_, LEAP_XU_STROBE_CONTROL, (uint8_t*)&tmp, sizeof(tmp));
+        }
         break;
       default:
         return kNotHandled;
