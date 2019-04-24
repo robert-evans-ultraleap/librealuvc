@@ -274,6 +274,13 @@ bool VideoCapture::open(int index) {
   is_realuvc_ = true;
   vendor_id_ = info[index].vid;
   product_id_ = info[index].pid;
+  // Set low-power sleep state
+  realuvc_->set_power_state(D3);
+  // Wait a while
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  // Set full-power state before using the device
+  realuvc_->set_power_state(D0);
+  // Now we should be able to access extension units
   driver_ = driver_table.make_driver(vendor_id_, product_id_, realuvc_);
   // Kludge for the weird frame formats returned by Leap Peripheral/Rigel
   DevFrameFixup fixup = FIXUP_NORMAL;
@@ -282,12 +289,6 @@ bool VideoCapture::open(int index) {
   } else if( (vendor_id_ == 0x2936) && (product_id_ == 0x1202)) { // Leap Rigel
     fixup = FIXUP_GRAY8_ROW_L_ROW_R;
   }
-  // Set low-power sleep state
-  realuvc_->set_power_state(D3);
-  // Wait a while
-  std::this_thread::sleep_for(std::chrono::milliseconds(20));
-  // Set full-power state before using the device
-  realuvc_->set_power_state(D0);
   istream_ = std::make_shared<VideoStream>(fixup);
   return true;
 }
@@ -417,7 +418,9 @@ bool VideoCapture::set(int prop_id, double val) {
   auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
   std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
-  printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+  if (prop_id != cv::CAP_PROP_SHARPNESS) {
+    printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+  }
   if (driver_) {
     // The driver can implement device-specific behavior for some prop_id's
     // while falling through to the default behavior for others.

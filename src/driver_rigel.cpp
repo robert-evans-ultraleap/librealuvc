@@ -46,7 +46,11 @@ class PropertyDriverRigel : public IPropertyDriver {
     leap_xu_.unit = 1;
     leap_xu_.node = 4;
     leap_xu_.id = guid LEAP_XU_GUID;
-    dev_->init_xu(leap_xu_);
+    try {
+      dev_->init_xu(leap_xu_);
+    } catch (std::exception& e) {
+      printf("EXCEPTION: init_xu: %s\n", e.what());
+    }
   }
 
   int get_frame_fixup() override {
