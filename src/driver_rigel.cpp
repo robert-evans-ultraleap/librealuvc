@@ -125,9 +125,12 @@ class PropertyDriverRigel : public IPropertyDriver {
       }
       case cv::CAP_PROP_GAIN: {
         ival = (int)val;
+        // It looks as though this is supposed to be pseudo-floating-point,
+        // but the code (copied from CameraRigel) looks a bit bogus.
         int32_t code;
+        // 
         if      (ival <  16) code = 0x00;
-        else if (ival <  32) code = 0x00 + (ival-16);
+        else if (ival <  31) code = 0x00 + (ival-16);
         else if (ival <  63) code = 0x10 + ((ival- 31)>>1);
         else if (ival < 126) code = 0x20 + ((ival- 62)>>2);
         else if (ival < 252) code = 0x30 + ((ival-124)>>3);
@@ -144,16 +147,15 @@ class PropertyDriverRigel : public IPropertyDriver {
         // No hardware HDR
         ok = ((val == 0.0) ? true : false);
         break;
-      case CAP_PROP_LEAP_LEDS:
-        if (leds_ != val) {
-          // LED control goes through set_xu
-          uint8_t tmpA = flag(val);
-          ok = dev_->set_xu(leap_xu_, LEAP_XU_STROBE_CONTROL, (uint8_t*)&tmpA, sizeof(tmpA));
-          uint32_t tmpB = flag(val);
-          ok &= dev_->set_xu(leap_xu_, LEAP_XU_ESC_LED_CHARGE, (uint8_t*)&tmpB, sizeof(tmpB));
-          if (ok) leds_ = val;
-        }
+      case CAP_PROP_LEAP_LEDS: {
+        // LED control goes through set_xu
+        uint8_t tmpA = flag(val);
+        ok = dev_->set_xu(leap_xu_, LEAP_XU_STROBE_CONTROL, (uint8_t*)&tmpA, sizeof(tmpA));
+        uint32_t tmpB = flag(val);
+        ok &= dev_->set_xu(leap_xu_, LEAP_XU_ESC_LED_CHARGE, (uint8_t*)&tmpB, sizeof(tmpB));
+        if (ok) leds_ = val;
         break;
+      }
       default:
         return kNotHandled;
     }
