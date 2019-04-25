@@ -48,7 +48,8 @@ class ViewerOptions {
       "  --gamma <on|off>      gamma-correction on or off (peripheral only)\n"
       "  --hdr <on|off>        high dynamic range on or off (peripheral only)\n"
       "  --height <num>        frame height in pixels\n"
-      "  --leds <on|off>.....  led illumination on or off\n"
+      "  --leds <on|off>       led illumination on or off\n"
+      "  --magnify <num>       magnify the on-screen image (without smoothing)\n"
       "  --product <string>    choose rigel or peripheral device\n"
       "  --width <num>         frame width in pixels\n"
     );
@@ -279,7 +280,7 @@ void view_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
 
 extern "C"
 int main(int argc, char* argv[]) {
-  printf("viewer: Leap Motion leap/rigel viewer %s\n", VERSION);
+  printf("viewer: Leap Motion peripheral/rigel viewer %s\n", VERSION);
   fflush(stdout);
   ViewerOptions options(argc, argv);
   try {
