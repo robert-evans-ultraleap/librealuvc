@@ -10,10 +10,10 @@ leap.start()
 cv2.namedWindow   ('Settings')
 cv2.createTrackbar('Rectify',   'Settings', 0, 1,  lambda a:0)                # Applies image rectification
 # On Windows, this passes through the KSPROPERTY_CAMERACONTROL_ZOOM which may not work outside [10-600]
-cv2.createTrackbar('Exposure',  'Settings', 10, 300, leap.setExposure)   # Sets the exposure time in microseconds
+cv2.createTrackbar('Exposure',  'Settings', 10, 2000, leap.setExposure)       # Sets the exposure time in microseconds
 cv2.createTrackbar('LEDs',      'Settings', 1, 1,  lambda a: (leap.setLeftLED(a), leap.setCenterLED(a), leap.setRightLED(a))) # Turns on the IR LEDs
 cv2.createTrackbar('Gamma',     'Settings', 1, 1,  leap.setGammaEnabled)      # Applies a sqrt(x) contrast-reducing curve in 10-bit space
-cv2.createTrackbar('Anlg Gain', 'Settings', 16, 63, leap.setGain)              # Amplifies the signal in analog space, 16-63
+cv2.createTrackbar('Anlg Gain', 'Settings', 16, 200, leap.setGain)            # Amplifies the signal in analog space, 16-63
 cv2.createTrackbar('Dgtl Gain', 'Settings', 4, 15, leap.setDigitalGain)       # Digitally amplifies the signal in 10-bit space
 cv2.createTrackbar('HDR',       'Settings', 0, 1,  leap.setHDR)               # Selectively reduces the exposure of bright areas at the cost of fixed-pattern noise
 #cv2.createTrackbar('Rotate',    'Settings', 0, 1,  leap.set180Rotation)       # Rotates each camera image in-place 180 degrees (need to unflip when using calibrations!)

@@ -77,10 +77,35 @@ class PropertyDriverRigel : public IPropertyDriver {
       case CAP_PROP_LEAP_HDR:
         *val = 0.0;
         break;
-      case CAP_PROP_LEAP_LED_L:
-      case CAP_PROP_LEAP_LED_M:
-      case CAP_PROP_LEAP_LED_R:
+      case CAP_PROP_LEAP_LEDS:
         *val = leds_;
+        break;
+      default:
+        return kNotHandled;
+    }
+    return (ok ? kHandlerTrue : kHandlerFalse);
+  }
+  
+  HandlerResult get_prop_range(int prop_id, double* min_val, double* max_val) override {
+    bool ok = true;
+    *min_val = 0;
+    *max_val = 0;
+    switch (prop_id) {
+      case cv::CAP_PROP_EXPOSURE:
+        *max_val = 1000;
+        break;
+      case cv::CAP_PROP_GAIN:
+        *min_val = 16;
+        *max_val = 500;
+        break;
+      case cv::CAP_PROP_GAMMA:
+        ok = false;
+        break;
+      case CAP_PROP_LEAP_HDR:
+        ok = false;
+        break;
+      case CAP_PROP_LEAP_LEDS:
+        *max_val = 1;
         break;
       default:
         return kNotHandled;
@@ -119,14 +144,14 @@ class PropertyDriverRigel : public IPropertyDriver {
         // No hardware HDR
         ok = ((val == 0.0) ? true : false);
         break;
-      case CAP_PROP_LEAP_LED_L:
-      case CAP_PROP_LEAP_LED_M:
-      case CAP_PROP_LEAP_LED_R:
+      case CAP_PROP_LEAP_LEDS:
         if (leds_ != val) {
-          leds_ = val;
           // LED control goes through set_xu
-          uint8_t tmp = flag(val);
-          ok = dev_->set_xu(leap_xu_, LEAP_XU_STROBE_CONTROL, (uint8_t*)&tmp, sizeof(tmp));
+          uint8_t tmpA = flag(val);
+          ok = dev_->set_xu(leap_xu_, LEAP_XU_STROBE_CONTROL, (uint8_t*)&tmpA, sizeof(tmpA));
+          uint32_t tmpB = flag(val);
+          ok &= dev_->set_xu(leap_xu_, LEAP_XU_ESC_LED_CHARGE, (uint8_t*)&tmpB, sizeof(tmpB));
+          if (ok) leds_ = val;
         }
         break;
       default:

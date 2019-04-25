@@ -24,16 +24,12 @@ class PropertyDriverPeripheral : public IPropertyDriver {
  private:
   shared_ptr<uvc_device> dev_;
   double hdr_;
-  double led_l_;
-  double led_m_;
-  double led_r_;
+  double leds_;
  public:
   PropertyDriverPeripheral(const shared_ptr<uvc_device>& dev) :
     dev_(dev),
     hdr_(0),
-    led_l_(1),
-    led_m_(1),
-    led_r_(1) {
+    leds_(1) {
   }
 
   int get_frame_fixup() override {
@@ -41,7 +37,7 @@ class PropertyDriverPeripheral : public IPropertyDriver {
   }
 
   HandlerResult get_prop(int prop_id, double* val) override {
-    bool ok = false;
+    bool ok = true;
     int32_t ival = 0;
     switch (prop_id) {
       case cv::CAP_PROP_EXPOSURE:
@@ -58,16 +54,38 @@ class PropertyDriverPeripheral : public IPropertyDriver {
         break;
       case CAP_PROP_LEAP_HDR:
         *val = hdr_;
-        return kHandlerTrue;
-      case CAP_PROP_LEAP_LED_L:
-        *val = led_l_;
-        return kHandlerTrue;
-      case CAP_PROP_LEAP_LED_M:
-        *val = led_m_;
-        return kHandlerTrue;
-      case CAP_PROP_LEAP_LED_R:
-        *val = led_r_;
-        return kHandlerTrue;
+        break;
+      case CAP_PROP_LEAP_LEDS:
+        *val = leds_;
+        break;
+      default:
+        return kNotHandled;
+    }
+    return (ok ? kHandlerTrue : kHandlerFalse);
+  }
+  
+  HandlerResult get_prop_range(int prop_id, double* min_val, double* max_val) override {
+    bool ok = true;
+    *min_val = 0;
+    *max_val = 0;
+    switch (prop_id) {
+      case cv::CAP_PROP_EXPOSURE:
+        *min_val = 10;
+        *max_val = 300;
+        break;
+      case cv::CAP_PROP_GAIN:
+        *min_val = 16;
+        *max_val = 63;
+        break;
+      case cv::CAP_PROP_GAMMA:
+        *max_val = 1;
+        break;
+      case CAP_PROP_LEAP_HDR:
+        *max_val = 1;
+        break;
+      case CAP_PROP_LEAP_LEDS:
+        *max_val = 1;
+        break;
       default:
         return kNotHandled;
     }
@@ -75,7 +93,7 @@ class PropertyDriverPeripheral : public IPropertyDriver {
   }
   
   HandlerResult set_prop(int prop_id, double val) override {
-    bool ok = false;
+    bool ok = true;
     switch (prop_id) {
       case cv::CAP_PROP_EXPOSURE:
         ok = dev_->set_pu(RU_OPTION_ZOOM_ABSOLUTE, saturate(val, 10, 0xffff));
@@ -90,17 +108,11 @@ class PropertyDriverPeripheral : public IPropertyDriver {
         hdr_ = val;
         ok = dev_->set_pu(RU_OPTION_CONTRAST, 0x0 | (flag(val)<<6));
         break;
-      case CAP_PROP_LEAP_LED_L:
-        led_l_ = val;
-        ok = dev_->set_pu(RU_OPTION_CONTRAST, 0x2 | (flag(val)<<6));
-        break;
-      case CAP_PROP_LEAP_LED_M:
-        led_l_ = val;
-        ok = dev_->set_pu(RU_OPTION_CONTRAST, 0x3 | (flag(val)<<6));
-        break;
-      case CAP_PROP_LEAP_LED_R:
-        led_l_ = val;
-        ok = dev_->set_pu(RU_OPTION_CONTRAST, 0x4 | (flag(val)<<6));
+      case CAP_PROP_LEAP_LEDS:
+        ok &= dev_->set_pu(RU_OPTION_CONTRAST, 0x2 | (flag(val)<<6));
+        ok &= dev_->set_pu(RU_OPTION_CONTRAST, 0x3 | (flag(val)<<6));
+        ok &= dev_->set_pu(RU_OPTION_CONTRAST, 0x4 | (flag(val)<<6));
+        if (ok) leds_ = val;
         break;
       default:
         return kNotHandled;

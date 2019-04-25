@@ -7,11 +7,6 @@ import cv2
 from scipy.optimize import curve_fit
 import pyrealuvc
 
-CAP_PROP_LEAP_HDR   = 101
-CAP_PROP_LEAP_LED_L = 102
-CAP_PROP_LEAP_LED_M = 103
-CAP_PROP_LEAP_LED_R = 104
-
 class leapImageThread(threading.Thread):
     '''A dedicated thread that handles retrieving imagery from an unlocked Leap Motion Peripheral'''
     def __init__(self, source = 1, resolution = (640, 480), timeout=4.0):
@@ -53,10 +48,8 @@ class leapImageThread(threading.Thread):
         self.running = False
         self.doYUYConversion = source == cv2.CAP_DSHOW # Not implemented!
         self.embeddedLine = None
-        self.CAP_PROP_LEAP_HDR   = 101
-        self.CAP_PROP_LEAP_LED_L = 102
-        self.CAP_PROP_LEAP_LED_M = 103
-        self.CAP_PROP_LEAP_LED_R = 104
+        self.CAP_PROP_LEAP_HDR  = 101
+        self.CAP_PROP_LEAP_LEDS = 102
 
     def run(self):
         self.running = True
@@ -124,13 +117,13 @@ class leapImageThread(threading.Thread):
         return self.setLEDsHDRorRotate(1, 1 if enabled else 0)
     def setLeftLED(self, enabled):
         '''Controls the Left LED. \n(enabled) -> (ret)'''
-        return self.cam.set(self.CAP_PROP_LEAP_LED_L, 1 if enabled else 0)
+        return self.cam.set(self.CAP_PROP_LEAP_LEDS, 1 if enabled else 0)
     def setCenterLED(self, enabled):
         '''Controls the Center LED. \n(enabled) -> (ret)'''
-        return self.cam.set(self.CAP_PROP_LEAP_LED_M, 1 if enabled else 0)
+        return self.cam.set(self.CAP_PROP_LEAP_LEDS, 1 if enabled else 0)
     def setRightLED(self, enabled):
         '''Controls the Right LED. \n(enabled) -> (ret)'''
-        return self.cam.set(self.CAP_PROP_LEAP_LED_R, 1 if enabled else 0)
+        return self.cam.set(self.CAP_PROP_LEAP_LEDS, 1 if enabled else 0)
     def setVerticalCenter(self, value):
         '''Changes the Vertical Center. \n(value) -> (ret)'''
         return self.setLEDsHDRorRotate(5, value)

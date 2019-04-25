@@ -27,6 +27,7 @@ bool OptionParse::advance() {
 void OptionParse::err_bad_option() {
   fprintf(stderr, "ERROR: option '%s' not recognized\n",
     (idx_ < argc_) ? argv_[idx_] : "<nullptr>");
+  ++idx_;
   ++nerr_;
 }
 

@@ -50,6 +50,8 @@ class IPropertyDriver {
   
   virtual int get_frame_fixup() { return 0; }
   
+  virtual HandlerResult get_prop_range(int prop_id, double* min, double* max) = 0;
+  
   virtual HandlerResult get_prop(int prop_id, double* val) = 0;
   
   virtual HandlerResult set_prop(int prop_id, double val) = 0;
@@ -67,11 +69,9 @@ LIBREALUVC_EXPORT void register_property_driver(
 
 // Leap-specific device controls taking care not to match
 enum CapPropLeap {
-  CAP_PROP_LEAP_BASE  = 100,
-  CAP_PROP_LEAP_HDR   = 101,
-  CAP_PROP_LEAP_LED_L = 102,
-  CAP_PROP_LEAP_LED_M = 103,
-  CAP_PROP_LEAP_LED_R = 104,
+  CAP_PROP_LEAP_BASE = 100,
+  CAP_PROP_LEAP_HDR  = 101,
+  CAP_PROP_LEAP_LEDS = 102,
 };
 
 class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
@@ -94,7 +94,7 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   
   virtual ~VideoCapture();
   
-  virtual double get(int propId) const;
+  virtual double get(int prop_id) const;
   virtual bool grab();
   virtual bool isOpened() const;
   
@@ -108,13 +108,15 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   virtual bool read(cv::OutputArray image);
   virtual void release();
   virtual bool retrieve(cv::OutputArray image, int flag = 0);
-  virtual bool set(int propId, double value);
+  virtual bool set(int prop_id, double value);
 
   // Does it support extended functionality through librealuvc ?
   virtual bool is_extended() const;
   
   virtual int get_vendor_id() const;
   virtual int get_product_id() const;
+  
+  virtual bool get_prop_range(int prop_id, double* min_val, double* max_val);
   
   virtual bool get_xu(int ctrl, void* data, int len);
   virtual bool set_xu(int ctrl, const void* data, int len);

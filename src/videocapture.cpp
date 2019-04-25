@@ -77,9 +77,7 @@ const char* prop_name(int prop_id) {
 #undef PROP
 #define PROP_LEAP(x) case librealuvc::CAP_PROP_LEAP_##x: return "CAP_PROP_LEAP_" #x;
     PROP_LEAP(HDR)
-    PROP_LEAP(LED_L)
-    PROP_LEAP(LED_M)
-    PROP_LEAP(LED_R)
+    PROP_LEAP(LEDS)
 #undef PROP_LEAP
     default:
       return("UNKNOWN");
@@ -419,7 +417,7 @@ bool VideoCapture::set(int prop_id, double val) {
   std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
   if (prop_id != cv::CAP_PROP_SHARPNESS) {
-    printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+    //printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
   }
   if (driver_) {
     // The driver can implement device-specific behavior for some prop_id's
@@ -495,6 +493,20 @@ int VideoCapture::get_vendor_id() const {
 
 int VideoCapture::get_product_id() const {
   return (is_realuvc_ ? product_id_ : 0);
+}
+
+bool VideoCapture::get_prop_range(int prop_id, double* min_val, double* max_val) {
+  if (driver_) {
+    // The driver can implement device-specific behavior for some prop_id's
+    // while falling through to the default behavior for others.
+    switch (driver_->get_prop_range(prop_id, min_val, max_val)) {
+      case kHandlerFalse: return false;
+      case kHandlerTrue:  return true;
+      default: break;
+    }
+  }
+  // FIXME: dig this information out from the realuvc
+  return false;
 }
 
 bool VideoCapture::get_xu(int ctrl, void* data, int len) {

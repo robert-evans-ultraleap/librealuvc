@@ -14,7 +14,7 @@
 #define D(...) { }
 #endif
 
-#define VERSION "1.0.2 [2019-04-18]"
+#define VERSION "1.0.2 [2019-04-25]"
 
 using namespace librealuvc;
 using std::string;
@@ -45,8 +45,8 @@ class ViewerOptions {
       "  --digital_gain <num>  digital gain\n"
       "  --exposure <num>      exposure in microseconds\n"
       "  --fps <num>           frames-per-second\n"
-      "  --gamma <on|off>      gamma-correction on or off\n"
-      "  --hdr <on|off>        high dynamic range on or off\n"
+      "  --gamma <on|off>      gamma-correction on or off (peripheral only)\n"
+      "  --hdr <on|off>        high dynamic range on or off (peripheral only)\n"
       "  --height <num>        frame height in pixels\n"
       "  --leds <on|off>.....  led illumination on or off\n"
       "  --product <string>    choose rigel or peripheral device\n"
@@ -68,7 +68,7 @@ class ViewerOptions {
       } else if (p.have_option_value("-e", "--exposure",     exposure_)) {
       } else if (p.have_option_value("-f", "--fps",          fps_)) {
       } else if (p.have_option_value("-g", "--gamma",        gamma_)) {
-      } else if (p.have_option_value("-z", "--hdr",          hdr_)) {
+      } else if (p.have_option_value("-Z", "--hdr",          hdr_)) {
       } else if (p.have_option_value("-h", "--height",       height_)) {
       } else if (p.have_option_value("-l", "--leds",         leds_)) {
       } else if (p.have_option_value("-m", "--magnify",      magnify_)) {
@@ -176,16 +176,22 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
       cap.set(cv::CAP_PROP_EXPOSURE, val);
     }
     if (opt.gamma_.has_value()) {
-      cap.set(cv::CAP_PROP_GAMMA, opt.gamma_.value() ? 1 : 0);
+      if (is_rigel(cap) && opt.gamma_.value()) {
+        printf("warning: gamma not supported on rigel hardware\n");
+      } else {
+        cap.set(cv::CAP_PROP_GAMMA, opt.gamma_.value() ? 1 : 0);
+      }
     }
     if (opt.hdr_.has_value()) {
-      cap.set(librealuvc::CAP_PROP_LEAP_HDR, opt.hdr_.value() ? 1 : 0);
+      if (is_rigel(cap) && opt.hdr_.value()) {
+        printf("warning: hdr not supported on rigel hardware\n");
+      } else {
+        cap.set(librealuvc::CAP_PROP_LEAP_HDR, opt.hdr_.value() ? 1 : 0);
+      }
     }
     if (opt.leds_.has_value()) {
       double val = (opt.leds_.value() ? 1 : 0);
-      cap.set(librealuvc::CAP_PROP_LEAP_LED_L, val);
-      cap.set(librealuvc::CAP_PROP_LEAP_LED_M, val);
-      cap.set(librealuvc::CAP_PROP_LEAP_LED_R, val);
+      cap.set(librealuvc::CAP_PROP_LEAP_LEDS, val);
     }
     return;
   }
