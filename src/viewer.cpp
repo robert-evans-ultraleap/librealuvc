@@ -7,6 +7,9 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #if 0
 #define D(...) { printf("DEBUG[%d] ", __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
@@ -14,10 +17,12 @@
 #define D(...) { }
 #endif
 
-#define VERSION "1.0.2 [2019-04-25]"
+#define VERSION "1.0.3 [2019-04-30]"
 
 using namespace librealuvc;
+using std::shared_ptr;
 using std::string;
+using std::weak_ptr;
 using leap::Optional;
 using leap::OptionParse;
 
@@ -41,7 +46,7 @@ class ViewerOptions {
     fprintf(
       stderr,
       "usage: viewer\n"
-      "  --analog_gain <num>   analog gain 16-63\n"
+      "  --analog_gain <num>   analog gain\n"
       "  --digital_gain <num>  digital gain\n"
       "  --exposure <num>      exposure in microseconds\n"
       "  --fps <num>           frames-per-second\n"
@@ -58,7 +63,13 @@ class ViewerOptions {
 
 #define USAGE() usage(__LINE__)
 
-  ViewerOptions(int argc, char** argv) {
+  ViewerOptions(int argc, char** argv) :
+    analog_gain_(32),
+    digital_gain_(1),
+    exposure_(100),
+    gamma_(false),
+    hdr_(false),
+    leds_(true) {
     OptionParse p(argc, argv);
     while (!p.have_end()) {
       D("argv[%d] = '%s'", p.idx_, p.argv_[p.idx_]);
@@ -103,16 +114,16 @@ static uint32_t str2fourcc(const char* s) {
 #define PRODUCT_C905       0x080a
 #define PRODUCT_LEAP       0x0003
 
-bool is_rigel(librealuvc::VideoCapture& cap) {
-  return (cap.isOpened() && 
-    (cap.get_vendor_id() == VENDOR_RIGEL) && 
-    (cap.get_product_id() == PRODUCT_RIGEL));
+bool is_rigel(shared_ptr<VideoCapture> cap) {
+  return (cap->isOpened() && 
+    (cap->get_vendor_id() == VENDOR_RIGEL) && 
+    (cap->get_product_id() == PRODUCT_RIGEL));
 }
 
-bool is_leap(librealuvc::VideoCapture& cap) {
-  return (cap.isOpened() && 
-    (cap.get_vendor_id() == VENDOR_LEAP) && 
-    (cap.get_product_id() == PRODUCT_LEAP));
+bool is_leap(shared_ptr<VideoCapture> cap) {
+  return (cap->isOpened() && 
+    (cap->get_vendor_id() == VENDOR_LEAP) && 
+    (cap->get_product_id() == PRODUCT_LEAP));
 }
 
 struct Config {
@@ -146,7 +157,9 @@ Config config_default[] = {
   { 0, 0, 0 }
 };
 
-void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
+
+
+void config_cap(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
   Config* table = config_default;
   if      (is_leap(cap))  table = config_leap;
   else if (is_rigel(cap)) table = config_rigel;
@@ -157,56 +170,164 @@ void config_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     // Everything matched
     printf("-- set fps %.1f width %d height %d\n", p->fps_, p->width_, p->height_);
     fflush(stdout);
-    cap.set(cv::CAP_PROP_FOURCC, str2fourcc("YUY2"));
-    cap.set(cv::CAP_PROP_FPS,          p->fps_);
-    cap.set(cv::CAP_PROP_FRAME_WIDTH,  p->width_);
-    cap.set(cv::CAP_PROP_FRAME_HEIGHT, p->height_);
+    cap->set(cv::CAP_PROP_FOURCC, str2fourcc("YUY2"));
+    cap->set(cv::CAP_PROP_FPS,          p->fps_);
+    cap->set(cv::CAP_PROP_FRAME_WIDTH,  p->width_);
+    cap->set(cv::CAP_PROP_FRAME_HEIGHT, p->height_);
     //
     // Other settings from command-line options.
     //
     if (opt.analog_gain_.has_value()) {
-      cap.set(cv::CAP_PROP_GAIN, opt.analog_gain_.value());
+      cap->set(cv::CAP_PROP_GAIN, opt.analog_gain_.value());
     }
     if (opt.digital_gain_.has_value()) {
-      cap.set(cv::CAP_PROP_BRIGHTNESS, opt.digital_gain_.value());
+      cap->set(cv::CAP_PROP_BRIGHTNESS, opt.digital_gain_.value());
     }
     if (opt.exposure_.has_value()) {
       int val = opt.exposure_.value();
       if (val < 10) val = 10;
       if (val > 0xffff) val = 0xffff;
-      cap.set(cv::CAP_PROP_EXPOSURE, val);
+      cap->set(cv::CAP_PROP_EXPOSURE, val);
     }
     if (opt.gamma_.has_value()) {
       if (is_rigel(cap) && opt.gamma_.value()) {
         printf("warning: gamma not supported on rigel hardware\n");
       } else {
-        cap.set(cv::CAP_PROP_GAMMA, opt.gamma_.value() ? 1 : 0);
+        cap->set(cv::CAP_PROP_GAMMA, opt.gamma_.value() ? 1 : 0);
       }
     }
     if (opt.hdr_.has_value()) {
       if (is_rigel(cap) && opt.hdr_.value()) {
         printf("warning: hdr not supported on rigel hardware\n");
       } else {
-        cap.set(librealuvc::CAP_PROP_LEAP_HDR, opt.hdr_.value() ? 1 : 0);
+        cap->set(librealuvc::CAP_PROP_LEAP_HDR, opt.hdr_.value() ? 1 : 0);
       }
     }
     if (opt.leds_.has_value()) {
       double val = (opt.leds_.value() ? 1 : 0);
-      cap.set(librealuvc::CAP_PROP_LEAP_LEDS, val);
+      cap->set(librealuvc::CAP_PROP_LEAP_LEDS, val);
     }
     return;
   }
   // Fall through without finding a matching (fps, width, height)
   fprintf(stderr, "ERROR: invalid fps, width, height\n");
-  cap.release();
+  cap->release();
   throw std::exception("SILENT_EXIT");
 }
 
-void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
+class SliderControl {
+ public:
+  std::weak_ptr<VideoCapture> cap_;
+  int prop_id_;
+  string name_;
+  double min_;
+  double max_;
+  int want_;
+};
+
+class SliderWindow {
+ public:
+  string name_;
+  std::vector<SliderControl> vec_;
+};
+
+SliderWindow sliders;
+
+void on_trackbar_change(int val, void* arg) {
+  SliderControl* s = (SliderControl*)arg;
+  auto cap = s->cap_.lock();
+  if (!cap) return;
+  printf("-- on_trackbar(%d, %s) min %.0f max %.0f want %d ...\n",
+    val, s->name_.c_str(), s->min_, s->max_, s->want_);
+  fflush(stdout);
+  cap->set(s->prop_id_, (double)s->want_);
+}
+
+void init_trackbar_window(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
+  char win_name[64];
+  if      (is_rigel(cap)) strcpy(win_name, "Controls (rigel)");
+  else if (is_leap(cap))  strcpy(win_name, "Controls (peripheral)");
+  else                    strcpy(win_name, "Controls (camera)");
+  printf("DEBUG: init_trackbar_window() win_name %s\n", win_name);
+  cv::namedWindow(win_name, cv::WINDOW_NORMAL);
+  cv::resizeWindow(win_name, 500, 300);
+
+  auto create_slider = [&](const char* name, int prop_id) {
+    printf("-- create_slider(%s) ...\n", name);
+    sliders.vec_.push_back(SliderControl());
+    auto& s = sliders.vec_.back();
+    s.cap_ = cap;
+    s.prop_id_ = prop_id;
+    s.max_ = -1.0;
+    s.min_ = -1.0;
+    bool have_range = cap->get_prop_range(prop_id, &s.min_, &s.max_);
+    if (!have_range || (s.max_ <= s.min_)) {
+      sliders.vec_.resize(sliders.vec_.size()-1);
+      return;
+    }
+    printf("DEBUG: slider \"%s\" min %.0f max %.0f\n", name, s.min_, s.max_);
+    fflush(stdout);
+    if (s.min_ == 0) {
+      s.name_ = name;
+    } else {
+      std::stringstream ss;
+      ss << name << "-" << s.min_;
+      s.name_ = ss.str();
+    }
+  };
+
+  create_slider("analg_gain", cv::CAP_PROP_GAIN);
+  create_slider("digtl_gain", cv::CAP_PROP_BRIGHTNESS);
+  create_slider("exposure",    cv::CAP_PROP_EXPOSURE);
+  if (is_leap(cap)) {
+    create_slider("gamma", cv::CAP_PROP_GAMMA);
+  }
+  if (is_leap(cap) || is_rigel(cap)) {
+    create_slider("hdr",  librealuvc::CAP_PROP_LEAP_HDR);
+    create_slider("leds", librealuvc::CAP_PROP_LEAP_LEDS);
+  }
+  for (auto& s : sliders.vec_) {
+    s.want_ = (int)((s.min_ + s.max_) / 2.0);
+    switch (s.prop_id_) {
+      case cv::CAP_PROP_GAIN:
+        if (opt.analog_gain_.has_value()) s.want_ = opt.analog_gain_.value();
+        break;
+      case cv::CAP_PROP_BRIGHTNESS:
+        if (opt.digital_gain_.has_value()) s.want_ = opt.digital_gain_.value();
+        break;
+      case cv::CAP_PROP_EXPOSURE:
+        if (opt.exposure_.has_value()) s.want_ = opt.exposure_.value();
+        break;
+      case cv::CAP_PROP_GAMMA:
+        s.want_ = 0;
+        if (opt.gamma_.has_value()) s.want_ = (opt.gamma_.value() ? 1 : 0);
+        break;
+      case librealuvc::CAP_PROP_LEAP_HDR:
+        s.want_ = 0;
+        if (opt.hdr_.has_value()) s.want_ = (opt.hdr_.value() ? 1 : 0);
+        break;
+      case librealuvc::CAP_PROP_LEAP_LEDS:
+        s.want_ = 1;
+        if (opt.leds_.has_value()) s.want_ = (opt.leds_.value() ? 1 : 0);
+        break;
+      default:
+        break;
+    }
+    cv::createTrackbar(s.name_, win_name, &s.want_, (int)(s.max_-s.min_), on_trackbar_change, &s);
+    if (s.min_ != 0) {
+      cv::setTrackbarMin(s.name_, win_name, (int)s.min_);
+      cv::setTrackbarMax(s.name_, win_name, (int)s.max_);
+    }
+    on_trackbar_change(s.want_, &s);
+  }
+  cv::waitKey(1);
+}
+
+void open_cap(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
   int id;
   for (id = 0; id < 8; ++id) {
-    D("cap.open(%d) ...", id);
-    if (!cap.open(id)) continue;
+    D("cap->open(%d) ...", id);
+    if (!cap->open(id)) continue;
     if (opt.product_.has_value()) {
       if      (!strcmp(opt.product_.value().c_str(), "leap") && is_leap(cap)) break;
       else if (!strcmp(opt.product_.value().c_str(), "peripheral") && is_leap(cap)) break;
@@ -214,9 +335,9 @@ void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
     } else if (is_leap(cap) || is_rigel(cap)) {
       break;
     }
-    cap.release();
+    cap->release();
   }
-  if (!cap.isOpened()) {
+  if (!cap->isOpened()) {
     const char* s = (opt.product_.has_value() ? opt.product_.value().c_str() : "any");
     fprintf(stderr, "ERROR: no camera device matching %s\n", s);
     throw std::exception("SILENT_EXIT");
@@ -225,15 +346,15 @@ void open_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
 
 #define ESC 27
 
-void view_cap(librealuvc::VideoCapture& cap, ViewerOptions& opt) {
+void view_cap(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
   cv::Mat mat;
   cv::Mat magnified;
   int mag_factor = (opt.magnify_.has_value() ? opt.magnify_.value() : 1);
   bool stopped = false;
   for (int count = 0;; ++count) {
-    bool ok = cap.read(mat);
+    bool ok = cap->read(mat);
     if (!ok) {
-      D("cap.read() fail\n");
+      D("cap->read() fail\n");
       break;
     }
     if (!stopped) {
@@ -284,12 +405,13 @@ int main(int argc, char* argv[]) {
   fflush(stdout);
   ViewerOptions options(argc, argv);
   try {
-    librealuvc::VideoCapture cap;
+    auto cap = std::make_shared<VideoCapture>();
     open_cap(cap, options);
-    if (cap.isOpened()) {
+    if (cap->isOpened()) {
       config_cap(cap, options);
+      init_trackbar_window(cap, options);
     }
-    if (cap.isOpened()) {
+    if (cap->isOpened()) {
       D("view_cap() ...");
       view_cap(cap, options);
       D("view_cap() done");

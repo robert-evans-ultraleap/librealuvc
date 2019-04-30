@@ -7,7 +7,7 @@
 #include <cstdio>
 #include "leap_xu.h"
 
-#if 1
+#if 0
 #define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #else
 #define D(...) { }
@@ -67,10 +67,6 @@ class PropertyDriverRigel : public IPropertyDriver {
         *val = (double)tmp;
         break;
       }
-      case cv::CAP_PROP_GAIN:
-        ok = dev_->get_pu(RU_OPTION_GAIN, ival);
-        *val = (double)ival;
-        break;
       case cv::CAP_PROP_GAMMA:
         *val = 0.0;
         break;
@@ -92,11 +88,7 @@ class PropertyDriverRigel : public IPropertyDriver {
     *max_val = 0;
     switch (prop_id) {
       case cv::CAP_PROP_EXPOSURE:
-        *max_val = 1000;
-        break;
-      case cv::CAP_PROP_GAIN:
-        *min_val = 0;
-        *max_val = 0x4f;
+        *max_val = 4000;
         break;
       case cv::CAP_PROP_GAMMA:
         ok = false;
@@ -108,41 +100,18 @@ class PropertyDriverRigel : public IPropertyDriver {
         *max_val = 1;
         break;
       default:
-        printf("kHandlerNotDone\n");
         return kHandlerNotDone;
     }
-    printf("%s\n", ok ? "kHandlerTrue" : "kHandlerFalse");
     return (ok ? kHandlerTrue : kHandlerFalse);
   }
   
   HandlerResult set_prop(int prop_id, double val) override {
     bool ok = true;
-    int32_t ival;
     switch (prop_id) {
       case cv::CAP_PROP_EXPOSURE: {
         // Exposure goes through set_xu
         uint16_t tmp = (uint16_t)saturate(val, 10, 0xffff);
         ok = dev_->set_xu(leap_xu_, LEAP_XU_EXPOSURE_CONTROL, (uint8_t*)&tmp, sizeof(tmp));
-        break;
-      }
-      case cv::CAP_PROP_GAIN: {
-#if 0
-        ival = saturate(val, 16, 248+(0xf<<4));
-        // It looks as though this is supposed to be pseudo-floating-point,
-        // but the code (copied from CameraRigel) looks a bit bogus.
-        int32_t code = 0x00;
-        if      (ival <  16) code = 0x00;
-        else if (ival <  31) code = 0x00 + (ival-16);
-        else if (ival <  63) code = 0x10 + ((ival- 31)>>1);
-        else if (ival < 126) code = 0x20 + ((ival- 62)>>2);
-        else if (ival < 252) code = 0x30 + ((ival-124)>>3);
-        else                 code = 0x40 + ((ival-248)>>4);
-        ival = code;
-#else
-        ival = saturate(val, 0x00, 0x4f);
-#endif
-        D("set_pu(RU_OPTION_GAIN, 0x%04x) ...", (int)ival);
-        ok = dev_->set_pu(RU_OPTION_GAIN, ival);
         break;
       }
       case cv::CAP_PROP_GAMMA:

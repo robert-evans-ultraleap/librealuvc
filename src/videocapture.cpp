@@ -417,7 +417,7 @@ bool VideoCapture::set(int prop_id, double val) {
   std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
   if (prop_id != cv::CAP_PROP_SHARPNESS) {
-    //printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+    printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
   }
   if (driver_) {
     // The driver can implement device-specific behavior for some prop_id's
@@ -495,18 +495,63 @@ int VideoCapture::get_product_id() const {
   return (is_realuvc_ ? product_id_ : 0);
 }
 
+static double little_endian_to_double(const std::vector<uint8_t>& vec) {
+  int32_t val = 0;
+  size_t len = vec.size();
+  for (size_t j = 0; j < len; ++j) {
+    int32_t sign_or_zero_extend;
+    if (j+1 < len) {
+      sign_or_zero_extend = (uint8_t)vec[j];
+    } else {
+      sign_or_zero_extend = (int8_t)vec[j];
+    }
+    val |= (sign_or_zero_extend << (j<<3));
+  }
+  return (double)val;
+}
+
 bool VideoCapture::get_prop_range(int prop_id, double* min_val, double* max_val) {
+  if (!is_realuvc_) return false;
   if (driver_) {
     // The driver can implement device-specific behavior for some prop_id's
     // while falling through to the default behavior for others.
     switch (driver_->get_prop_range(prop_id, min_val, max_val)) {
-      case kHandlerFalse: return false;
       case kHandlerTrue:  return true;
+      case kHandlerFalse: return false;
       default: break;
     }
   }
-  // FIXME: dig this information out from the realuvc
-  return false;
+  control_range range;
+  switch (prop_id) {
+    case cv::CAP_PROP_BRIGHTNESS:
+      range = realuvc_->get_pu_range(RU_OPTION_BRIGHTNESS);
+      break;
+    case cv::CAP_PROP_CONTRAST:
+      range = realuvc_->get_pu_range(RU_OPTION_CONTRAST);
+      break;
+    case cv::CAP_PROP_GAIN:
+      range = realuvc_->get_pu_range(RU_OPTION_GAIN);
+      break;
+    case cv::CAP_PROP_GAMMA:
+      range = realuvc_->get_pu_range(RU_OPTION_GAMMA);
+      break;
+    case cv::CAP_PROP_SATURATION:
+      range = realuvc_->get_pu_range(RU_OPTION_SATURATION);
+      break;
+    case cv::CAP_PROP_SHARPNESS:
+      range = realuvc_->get_pu_range(RU_OPTION_SHARPNESS);
+      break;
+    case cv::CAP_PROP_ZOOM:
+      range = realuvc_->get_pu_range(RU_OPTION_ZOOM_ABSOLUTE);
+      break;
+    default:
+      D("get_prop_range() -> false");
+      return false;
+  }
+  *min_val = little_endian_to_double(range.min);
+  *max_val = little_endian_to_double(range.max);
+  D("get_prop_range() -> true, { %.0f, %.0f }", *min_val, *max_val);
+  return true;
 }
 
 bool VideoCapture::get_xu(int ctrl, void* data, int len) {
