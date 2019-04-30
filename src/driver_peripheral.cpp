@@ -59,7 +59,7 @@ class PropertyDriverPeripheral : public IPropertyDriver {
         *val = leds_;
         break;
       default:
-        return kNotHandled;
+        return kHandlerNotDone;
     }
     return (ok ? kHandlerTrue : kHandlerFalse);
   }
@@ -87,7 +87,7 @@ class PropertyDriverPeripheral : public IPropertyDriver {
         *max_val = 1;
         break;
       default:
-        return kNotHandled;
+        return kHandlerNotDone;
     }
     return (ok ? kHandlerTrue : kHandlerFalse);
   }
@@ -115,7 +115,7 @@ class PropertyDriverPeripheral : public IPropertyDriver {
         if (ok) leds_ = val;
         break;
       default:
-        return kNotHandled;
+        return kHandlerNotDone;
     }
     return (ok ? kHandlerTrue : kHandlerFalse);
   }

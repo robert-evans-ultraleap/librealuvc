@@ -81,7 +81,7 @@ class PropertyDriverRigel : public IPropertyDriver {
         *val = leds_;
         break;
       default:
-        return kNotHandled;
+        return kHandlerNotDone;
     }
     return (ok ? kHandlerTrue : kHandlerFalse);
   }
@@ -95,8 +95,8 @@ class PropertyDriverRigel : public IPropertyDriver {
         *max_val = 1000;
         break;
       case cv::CAP_PROP_GAIN:
-        *min_val = 16;
-        *max_val = 500;
+        *min_val = 0;
+        *max_val = 0x4f;
         break;
       case cv::CAP_PROP_GAMMA:
         ok = false;
@@ -108,8 +108,10 @@ class PropertyDriverRigel : public IPropertyDriver {
         *max_val = 1;
         break;
       default:
-        return kNotHandled;
+        printf("kHandlerNotDone\n");
+        return kHandlerNotDone;
     }
+    printf("%s\n", ok ? "kHandlerTrue" : "kHandlerFalse");
     return (ok ? kHandlerTrue : kHandlerFalse);
   }
   
@@ -124,19 +126,23 @@ class PropertyDriverRigel : public IPropertyDriver {
         break;
       }
       case cv::CAP_PROP_GAIN: {
-        ival = (int)val;
+#if 0
+        ival = saturate(val, 16, 248+(0xf<<4));
         // It looks as though this is supposed to be pseudo-floating-point,
         // but the code (copied from CameraRigel) looks a bit bogus.
-        int32_t code;
-        // 
+        int32_t code = 0x00;
         if      (ival <  16) code = 0x00;
         else if (ival <  31) code = 0x00 + (ival-16);
         else if (ival <  63) code = 0x10 + ((ival- 31)>>1);
         else if (ival < 126) code = 0x20 + ((ival- 62)>>2);
         else if (ival < 252) code = 0x30 + ((ival-124)>>3);
         else                 code = 0x40 + ((ival-248)>>4);
-        D("set_pu(RU_OPTION_GAIN, 0x%04x) ...", (int)code);
-        ok = dev_->set_pu(RU_OPTION_GAIN, code);
+        ival = code;
+#else
+        ival = saturate(val, 0x00, 0x4f);
+#endif
+        D("set_pu(RU_OPTION_GAIN, 0x%04x) ...", (int)ival);
+        ok = dev_->set_pu(RU_OPTION_GAIN, ival);
         break;
       }
       case cv::CAP_PROP_GAMMA:
@@ -157,7 +163,7 @@ class PropertyDriverRigel : public IPropertyDriver {
         break;
       }
       default:
-        return kNotHandled;
+        return kHandlerNotDone;
     }
     return (ok ? kHandlerTrue : kHandlerFalse);
   }

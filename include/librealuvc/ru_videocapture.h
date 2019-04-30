@@ -37,16 +37,14 @@ class IVideoStream {
 // IPropertyDriver which may intercept the get/set calls.
 
 enum HandlerResult {
-  kHandlerNotDone,
-  kHandlerFalse,
-  kHandlerTrue
+  kHandlerFalse   = 0,
+  kHandlerTrue    = 1,
+  kHandlerNotDone = 2
 };
 
 class IPropertyDriver {
  public:
   virtual ~IPropertyDriver() { }
-  
-  enum HandlerResult { kNotHandled, kHandlerTrue, kHandlerFalse };
   
   virtual int get_frame_fixup() { return 0; }
   
