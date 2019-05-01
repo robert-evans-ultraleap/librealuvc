@@ -2,6 +2,7 @@
 dst=/d/rcownie/viewer
 rm -rf $dst
 mkdir $dst
+cp viewer_readme.txt ${dst}/README.txt
 cd /d/xlibs/opencv/build/x64/vc15/bin
 cp -p *.dll $dst
 cd /d/rcownie/librealuvc-build/Release

@@ -380,25 +380,16 @@ void VideoCapture::release() {
   if (is_realuvc_) {
     auto istream = std::dynamic_pointer_cast<VideoStream>(istream_);
     if (istream) { 
-      D("lock istream->mutex_ ...");
       std::unique_lock<std::mutex> lock(istream->mutex_);
       if (istream->is_streaming_) {
-        D("stop_callbacks()");
         realuvc_->stop_callbacks();
-        D("stop_callbacks() done");
-        D("close()");
         realuvc_->close(istream->profile_);
-        D("close() done");
         istream->is_streaming_ = false;
       }
     }
-    D("istream_.reset() ...");
     istream_.reset();
-    D("istream_.reset() done");
     is_realuvc_ = false;
-    D("realuvc_.reset()");
     realuvc_.reset();
-    D("realuvc_.reset() done");
   }
   D("VideoCapture::release() done");
 }
@@ -417,7 +408,7 @@ bool VideoCapture::set(int prop_id, double val) {
   std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
   if (prop_id != cv::CAP_PROP_SHARPNESS) {
-    printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+    //printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
   }
   if (driver_) {
     // The driver can implement device-specific behavior for some prop_id's

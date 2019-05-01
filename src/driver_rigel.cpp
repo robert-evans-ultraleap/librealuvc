@@ -61,10 +61,20 @@ class PropertyDriverRigel : public IPropertyDriver {
     bool ok = true;
     int32_t ival = 0;
     switch (prop_id) {
+      case cv::CAP_PROP_BRIGHTNESS:
+        *val = 0.0;
+        break;
       case cv::CAP_PROP_EXPOSURE: {
         uint16_t tmp = 0;
         ok = dev_->get_xu(leap_xu_, LEAP_XU_EXPOSURE_CONTROL, (uint8_t*)&tmp, sizeof(tmp));
         *val = (double)tmp;
+        break;
+      }
+      case cv::CAP_PROP_GAIN: {
+        // never use values 1-15
+        ok = dev_->get_pu(RU_OPTION_GAIN, ival);
+        ival = ((ival < 16) ? 0 : ival-15);
+        *val = (double)ival;
         break;
       }
       case cv::CAP_PROP_GAMMA:
@@ -87,9 +97,19 @@ class PropertyDriverRigel : public IPropertyDriver {
     *min_val = 0;
     *max_val = 0;
     switch (prop_id) {
+      case cv::CAP_PROP_BRIGHTNESS:
+        // Rigel has a brightness control, but it doesn't do anything
+        ok = false;
+        break;
       case cv::CAP_PROP_EXPOSURE:
         *max_val = 4000;
         break;
+      case cv::CAP_PROP_GAIN: {
+        // skip the range 1-15 which has non-monotonic effect
+        *min_val = 0;
+        *max_val = 79-15;
+        break;
+      }
       case cv::CAP_PROP_GAMMA:
         ok = false;
         break;
@@ -108,10 +128,18 @@ class PropertyDriverRigel : public IPropertyDriver {
   HandlerResult set_prop(int prop_id, double val) override {
     bool ok = true;
     switch (prop_id) {
+      case cv::CAP_PROP_BRIGHTNESS:
+        ok = ((val == 0.0) ? true : false);
+        break;
       case cv::CAP_PROP_EXPOSURE: {
         // Exposure goes through set_xu
         uint16_t tmp = (uint16_t)saturate(val, 10, 0xffff);
         ok = dev_->set_xu(leap_xu_, LEAP_XU_EXPOSURE_CONTROL, (uint8_t*)&tmp, sizeof(tmp));
+        break;
+      }
+      case cv::CAP_PROP_GAIN: {
+        if (val >= 1.0) val += 15.0;
+        ok = dev_->set_pu(RU_OPTION_GAIN, saturate(val, 0, 79));
         break;
       }
       case cv::CAP_PROP_GAMMA:
