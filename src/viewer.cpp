@@ -212,7 +212,6 @@ void init_trackbar_window(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
   if      (is_rigel(cap))  strcpy(win_name, "Controls (rigel)");
   else if (is_periph(cap)) strcpy(win_name, "Controls (peripheral)");
   else                     strcpy(win_name, "Controls (camera)");
-  printf("DEBUG: init_trackbar_window() win_name %s\n", win_name);
   cv::namedWindow(win_name, cv::WINDOW_AUTOSIZE);
 
   auto create_slider = [&](const char* name, int prop_id) {
@@ -229,8 +228,6 @@ void init_trackbar_window(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
       sliders.vec_.resize(sliders.vec_.size()-1);
       return;
     }
-    printf("DEBUG: slider \"%s\" min %.0f max %.0f\n", name, s.min_, s.max_);
-    fflush(stdout);
   };
 
   create_slider("analg_gain", cv::CAP_PROP_GAIN);
