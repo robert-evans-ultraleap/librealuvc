@@ -215,7 +215,6 @@ void init_trackbar_window(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
   cv::namedWindow(win_name, cv::WINDOW_AUTOSIZE);
 
   auto create_slider = [&](const char* name, int prop_id) {
-    printf("-- create_slider(%s) ...\n", name);
     sliders.vec_.push_back(SliderControl());
     auto& s = sliders.vec_.back();
     s.cap_ = cap;
