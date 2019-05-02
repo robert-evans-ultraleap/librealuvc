@@ -903,7 +903,7 @@ uvc_error_t uvc_claim_if(uvc_device_handle_t *devh, int idx) {
     ret = libusb_claim_interface(devh->usb_devh, idx);
   } else {
     UVC_DEBUG("not claiming interface %d: unable to detach kernel driver (%s)",
-              idx, uvc_strerror(ret));
+              idx, uvc_strerror((uvc_error_t)ret));
   }
 
   UVC_EXIT(ret);
@@ -938,7 +938,7 @@ uvc_error_t uvc_release_if(uvc_device_handle_t *devh, int idx) {
       ret = UVC_SUCCESS;  /* NOT_FOUND and NOT_SUPPORTED are OK: nothing to do */
     } else {
       UVC_DEBUG("error reattaching kernel driver to interface %d: %s",
-                idx, uvc_strerror(ret));
+                idx, uvc_strerror((uvc_error_t)ret));
     }
   }
 
@@ -1239,6 +1239,7 @@ uvc_error_t uvc_scan_streaming(uvc_device_t *dev,
   if_desc = &(info->config->interface[interface_idx].altsetting[0]);
   buffer = if_desc->extra;
   buffer_left = if_desc->extra_length;
+  printf("DEBUG: if_desc->extra_length %d\n", (int)if_desc->extra_length);
 
   stream_if = (uvc_streaming_interface_t *)calloc(1, sizeof(*stream_if));
   stream_if->parent = info;
@@ -1302,6 +1303,7 @@ uvc_error_t uvc_parse_vs_format_uncompressed(uvc_streaming_interface_t *stream_i
   format->bmInterlaceFlags = block[25];
   format->bCopyProtect = block[26];
 
+  printf("DEBUG: uvc_parse_vs_format_uncompressed DL_APPEND ...\n");
   DL_APPEND(stream_if->format_descs, format);
 
   UVC_EXIT(UVC_SUCCESS);
@@ -1332,6 +1334,7 @@ uvc_error_t uvc_parse_vs_frame_format(uvc_streaming_interface_t *stream_if,
   format->bCopyProtect = block[26];
   format->bVariableSize = block[27];
 
+  printf("DEBUG: uvc_parse_vs_frame_format DL_APPEND ...\n");
   DL_APPEND(stream_if->format_descs, format);
 
   UVC_EXIT(UVC_SUCCESS);

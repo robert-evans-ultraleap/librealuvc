@@ -20,8 +20,8 @@ endif()
 
 set(DEPENDENCIES librealuvc)
 
-set(BUILD_PYTHON_BINDINGS ON CACHE FORCE "")
+set(BUILD_PYTHON_BINDINGS ON CACHE BOOL "")
 
-if (BUILD_PYTHON_BINDINGS)
+if(BUILD_PYTHON_BINDINGS)
   add_subdirectory(python)
 endif()

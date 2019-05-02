@@ -243,7 +243,7 @@ string usb_device_info::to_string() const {
   MEMBER(pid);
   MEMBER(mi);
   MEMBER(unique_id);
-  MEMBER(conn_spec);
+  MEMBER((uint16_t)conn_spec);
   ss << "}";
   return ss.str();
 }
@@ -257,7 +257,7 @@ string uvc_device_info::to_string() const {
   MEMBER(mi);
   MEMBER(unique_id);
   MEMBER(device_path);
-  MEMBER(conn_spec);
+  MEMBER((uint16_t)conn_spec);
   MEMBER(uvc_capabilities);
   MEMBER(has_metadata_node);
   MEMBER(metadata_node_id);

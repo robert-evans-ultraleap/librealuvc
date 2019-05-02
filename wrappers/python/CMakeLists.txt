@@ -100,7 +100,7 @@ set(RAW_RS_HPP
 )
 
 if(${BACKEND} STREQUAL "RS2_USE_LIBUVC_BACKEND")
-  lappend(RAW_RS_CPP,
+  list(APPEND RAW_RS_CPP
     ../../src/libuvc/ctrl-gen.cpp
     ../../src/libuvc/ctrl.cpp
     ../../src/libuvc/device.cpp

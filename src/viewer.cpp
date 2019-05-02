@@ -7,6 +7,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <exception>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -25,6 +26,11 @@ using std::string;
 using std::weak_ptr;
 using leap::Optional;
 using leap::OptionParse;
+
+class silent_exit : public std::exception {
+ public:
+  virtual const char* what() const noexcept override { return "SILENT_EXIT"; }
+};
 
 class ViewerOptions {
  public:
@@ -57,7 +63,7 @@ class ViewerOptions {
       "  --product <string>    choose rigel or peripheral device\n"
       "  --width <num>         frame width in pixels\n"
     );
-    throw std::exception("SILENT_EXIT");
+    throw silent_exit();
   }
 
 #define USAGE() usage(__LINE__)
@@ -150,8 +156,6 @@ Config config_default[] = {
   { 0, 0, 0 }
 };
 
-
-
 void config_cap(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
   Config* table = config_default;
   if      (is_periph(cap)) table = config_leap;
@@ -179,7 +183,7 @@ void config_cap(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
   // Fall through without finding a matching (fps, width, height)
   fprintf(stderr, "ERROR: invalid fps, width, height\n");
   cap->release();
-  throw std::exception("SILENT_EXIT");
+  throw silent_exit();
 }
 
 class SliderControl {
@@ -292,7 +296,7 @@ void open_cap(shared_ptr<VideoCapture> cap, ViewerOptions& opt) {
   if (!cap->isOpened()) {
     const char* s = (opt.product_.has_value() ? opt.product_.value().c_str() : "any");
     fprintf(stderr, "ERROR: no camera device matching %s\n", s);
-    throw std::exception("SILENT_EXIT");
+    throw silent_exit();
   }
 }
 

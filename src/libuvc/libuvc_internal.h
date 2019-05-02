@@ -17,21 +17,43 @@
 #include <signal.h>
 #include "utlist.h"
 
-#pragma GCC diagnostic ignored "-Wpedantic"
+// #pragma GCC diagnostic ignored "-Wpedantic"
 #ifdef USE_SYSTEM_LIBUSB
     #include <libusb.h>
 #else
     #include "libusb/libusb.h"
 #endif
-#pragma GCC diagnostic pop
+// #pragma GCC diagnostic pop
+
+#define BYTE_TO_U16(p, shift) (( (uint16_t)(*(uint8_t*)(p)) ) << (shift))
+#define BYTE_TO_U32(p, shift) (( (uint32_t)(*(uint8_t*)(p)) ) << (shift))
+#define BYTE_TO_U64(p, shift) (( (uint64_t)(*(uint8_t*)(p)) ) << (shift))
 
 /** Converts an unaligned four-byte little-endian integer into an int32 */
-#define DW_TO_INT(p) ((p)[0] | ((p)[1] << 8) | ((p)[2] << 16) | ((p)[3] << 24))
+#define DW_TO_INT(p) (     \
+  BYTE_TO_U32((p),    0) | \
+  BYTE_TO_U32((p)+1,  8) | \
+  BYTE_TO_U32((p)+2, 16) | \
+  BYTE_TO_U32((p)+3, 24)   \
+)
+
 /** Converts an unaligned two-byte little-endian integer into an int16 */
-#define SW_TO_SHORT(p) ((p)[0] | ((p)[1] << 8))
+#define SW_TO_SHORT(p) (   \
+  BYTE_TO_U16((p),    0) | \
+  BYTE_TO_U16((p)+1,  8)   \
+)
+
 /** Converts an unaligned eight-byte little-endian integer into an int64 */
-#define QW_TO_QUAD(p) ((p)[0] | ((p)[1] << 8) | ((p)[2] << 16) | ((p)[3] << 24) |  \
-                       ((p)[4] << 32) |((p)[5] << 40) |((p)[6] << 48) |((p)[7] << 56))
+#define QW_TO_QUAD(p) (    \
+  BYTE_TO_U64((p),    0) | \
+  BYTE_TO_U64((p)+1,  8) | \
+  BYTE_TO_U64((p)+2, 16) | \
+  BYTE_TO_U64((p)+3, 24) | \
+  BYTE_TO_U64((p)+4, 32) | \
+  BYTE_TO_U64((p)+5, 40) | \
+  BYTE_TO_U64((p)+6, 48) | \
+  BYTE_TO_U64((p)+7, 56)   \
+)
 
 /** Converts an int16 into an unaligned two-byte little-endian integer */
 #define SHORT_TO_SW(s, p) \
@@ -74,17 +96,20 @@
     (out) = dl_nth_p; \
   } while (0);
 
+#define UVC_DEBUGGING 1
+
 #ifdef UVC_DEBUGGING
 #include <libgen.h>
-#define UVC_DEBUG(format, ...) fprintf(stderr, "[%s:%d/%s] " format "\n", basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__)
-#define UVC_ENTER() fprintf(stderr, "[%s:%d] begin %s\n", basename(__FILE__), __LINE__, __FUNCTION__)
-#define UVC_EXIT(code) fprintf(stderr, "[%s:%d] end %s (%d)\n", basename(__FILE__), __LINE__, __FUNCTION__, code)
-#define UVC_EXIT_VOID() fprintf(stderr, "[%s:%d] end %s\n", basename(__FILE__), __LINE__, __FUNCTION__)
+#define UVC_FILE (basename((char*)__FILE__))
+#define UVC_DEBUG(format, ...) fprintf(stdout, "[%s:%d/%s] " format "\n", UVC_FILE, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#define UVC_ENTER() fprintf(stdout, "[%s:%d] begin %s\n", UVC_FILE, __LINE__, __FUNCTION__)
+#define UVC_EXIT(code) fprintf(stdout, "[%s:%d] end %s (%d)\n", UVC_FILE, __LINE__, __FUNCTION__, code)
+#define UVC_EXIT_VOID() fprintf(stdout, "[%s:%d] end %s\n", UVC_FILE, __LINE__, __FUNCTION__)
 #else
-#define UVC_DEBUG(format, ...)
-#define UVC_ENTER()
-#define UVC_EXIT_VOID()
-#define UVC_EXIT(code)
+#define UVC_DEBUG(format, ...) { }
+#define UVC_ENTER() { }
+#define UVC_EXIT_VOID() { }
+#define UVC_EXIT(code) { }
 #endif
 
 /* http://stackoverflow.com/questions/19452971/array-size-macro-that-rejects-pointers */

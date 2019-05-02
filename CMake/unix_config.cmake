@@ -27,8 +27,10 @@ macro(os_set_flags)
     endif()
 
     if(APPLE)
+        message(STATUS "Setting Unix/APPLE configurations")
         set(FORCE_LIBUVC ON)
         set(BUILD_WITH_TM2 OFF)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-format-pedantic -Wno-gnu-zero-variadic-macro-arguments")
     endif()
 endmacro()
 
@@ -40,6 +42,7 @@ macro(os_target_config)
 
     pkg_search_module(LIBUSB1 REQUIRED libusb-1.0)
     if(LIBUSB1_FOUND)
+        message(STATUS "Found libusb ${LIBUSB1_INCLUDE_DIRS} ${LIBUSB1_LIBRARY_DIRS} ${LIBUSB1_LIBRARIES}")
         include_directories(SYSTEM ${LIBUSB1_INCLUDE_DIRS})
         link_directories(${LIBUSB1_LIBRARY_DIRS})
         list(APPEND librealuvc_PKG_DEPS "libusb-1.0")

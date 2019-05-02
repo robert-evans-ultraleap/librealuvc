@@ -286,12 +286,12 @@ typedef union _IMU_DATA {
     int16_t temperature;
     uint16_t status;
     uint64_t hwClock;
-  };
+  } get;
   struct {  // for set XU
     uint8_t imu_enable;
     uint8_t acc_scale;
     uint8_t gyro_scale;
-  };
+  } set;
 } IMU_DATA;
 
 // This is the structure that is written to the embedded line.
@@ -398,14 +398,14 @@ typedef struct _LEAP_SC_DEVCAPS {
   uint32_t sc_str_res_nS;
 
   union {
-    uint32_t sc_fuse_bits;
+    uint32_t all_bytes;
     struct {
       uint8_t sc_fuse_low;
       uint8_t sc_fuse_high;
       uint8_t sc_fuse_extended;
       uint8_t sc_fuse_reserved;
-    };
-  };
+    } bytes;
+  } sc_fuse;
 
   // The strobe controller resolution, in femtoseconds.
   // This field is meant to supercede sc_str_res_nS, and should be used instead of sc_str_res_nS

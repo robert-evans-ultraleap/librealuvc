@@ -272,8 +272,6 @@ uvc_error_t uvc_query_stream_ctrl(
         ctrl->bMaxNumberOfRefFramesPlus1 = buf[37];
         ctrl->bmRateControlModes = DW_TO_INT(buf + 38);
         ctrl->bmLayoutPerStream = QW_TO_QUAD(buf + 40);
-
-
     }
     else
       ctrl->dwClockFrequency = devh->info->ctrl_if.dwClockFrequency;
@@ -606,15 +604,21 @@ uvc_error_t uvc_get_stream_ctrl_format_size_all(
 ) {
   uvc_streaming_interface_t *stream_if;
   uvc_format_desc_t *format;
+  printf("DEBUG: uvc_get_stream_ctrl_format_size_all() ...\n");
 
   DL_FOREACH(devh->info->stream_ifs, stream_if) {
+    printf("DEBUG: stream_if ...\n");
     DL_FOREACH(stream_if->format_descs, format) {
       uvc_frame_desc_t *frame;
+      
+      printf("DEBUG: fourcc 0x%08x guidFormat 0x%08x ...\n",
+        fourcc, *(const uint32_t*)format->guidFormat);
 
       if (SWAP_UINT32(fourcc) != *(const uint32_t *) format->guidFormat)
         continue;
 
       DL_FOREACH(format->frame_descs, frame) {
+        printf("DEBUG: width %d height %d ...\n", frame->wWidth, frame->wHeight);
         if (frame->wWidth != width || frame->wHeight != height)
           continue;
 
@@ -1159,7 +1163,7 @@ uvc_error_t uvc_stream_start(
       transfer_id++) {
     ret = libusb_submit_transfer(strmh->transfers[transfer_id]);
     if (ret != UVC_SUCCESS) {
-      UVC_DEBUG("libusb_submit_transfer failed");
+      UVC_DEBUG("libusb_submit_transfer id %d failed: %s", transfer_id, uvc_strerror((uvc_error_t)ret));
       break;
     }
   }

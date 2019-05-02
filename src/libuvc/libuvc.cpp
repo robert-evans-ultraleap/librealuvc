@@ -2,7 +2,8 @@
 // Copyright(c) 2015 Intel Corporation. All Rights Reserved.
 
 #ifdef RS2_USE_LIBUVC_BACKEND
-#include "../include/librealuvc/h/rs_types.h"     // Inherit all type definitions in the public API
+#include "../include/librealuvc/ru_common.h"     // Inherit all type definitions in the public API
+#include "../types.h"
 #include "backend.h"
 #include "types.h"
 
@@ -316,6 +317,7 @@ namespace librealuvc
                 if (res < 0) {
                     uvc_close(_device_handle);
                     uvc_unref_device(_device);
+                    printf("DEBUG: res %d\n", (int)res);
                     throw linux_backend_exception("Could not get stream format.");
                 }
 
@@ -843,7 +845,7 @@ namespace librealuvc
         public:
             std::shared_ptr<uvc_device> create_uvc_device(uvc_device_info info) const override
             {
-                return std::make_shared<retry_controls_work_around>(
+                return std::make_shared<uvc_device_with_retry>(
                     std::make_shared<libuvc_uvc_device>(info));
             }
 
@@ -909,9 +911,11 @@ namespace librealuvc
                 return std::make_shared<os_time_service>();
             }
 
-            std::shared_ptr<device_watcher> create_device_watcher() const
+            std::shared_ptr<device_watcher> create_device_watcher() const override
             {
-                return std::make_shared<polling_device_watcher>(this);
+                // FIXME
+                //return std::make_shared<polling_device_watcher>(this);
+                return std::shared_ptr<device_watcher>();
             }
         };
 

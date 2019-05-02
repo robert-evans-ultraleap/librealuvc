@@ -52,6 +52,13 @@
  typedef ru_exception_sub<RU_EXCEPTION_TYPE_NOT_IMPLEMENTED> not_implemented_exception;
  typedef ru_exception_sub<RU_EXCEPTION_TYPE_IO> io_exception;
 
+ class linux_backend_exception : public backend_exception {
+  public:
+   linux_backend_exception(const string& what) :
+     backend_exception(what) {
+   }
+ };
+   
  class windows_backend_exception : public backend_exception {
   public:
    windows_backend_exception(const string& what) :
