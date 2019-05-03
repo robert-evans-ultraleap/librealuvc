@@ -49,7 +49,17 @@ macro(os_target_config)
     else()
         message( FATAL_ERROR "Failed to find libusb-1.0" )
     endif(LIBUSB1_FOUND)
+    
+    find_library(
+        LIBUSB1_LIBRARIES_PATHNAME
+        PATHS
+            ${LIBUSB1_LIBRARY_DIRS}
+        NAMES
+            ${LIBUSB1_LIBRARIES}
+            lib${LIBUSB1_LIBRARIES}
+    )
+    message(STATUS "LIBUSB1_LIBRARIES_PATHNAME ${LIBUSB1_LIBRARIES_PATHNAME}")
 
     target_include_directories(${LRS_TARGET} PRIVATE ${LIBUSB1_INCLUDE_DIRS})
-    target_link_libraries(${LRS_TARGET} PRIVATE ${LIBUSB1_LIBRARIES})
+    target_link_libraries(${LRS_TARGET} PRIVATE ${LIBUSB1_LIBRARIES_PATHNAME})
 endmacro()
