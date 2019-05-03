@@ -29,6 +29,7 @@
   
   public:
    ru_exception(const string& what, ru_exception_type t = RU_EXCEPTION_TYPE_UNKNOWN) :
+     what_(what),
      type_(t) {
    }
    

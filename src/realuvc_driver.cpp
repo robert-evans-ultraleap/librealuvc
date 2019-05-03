@@ -1,7 +1,7 @@
 #include <librealuvc/realuvc_driver.h>
 #include <condition_variable>
 
-#if 0
+#if 1
 #define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #else
 #define D(...) { }
@@ -153,6 +153,7 @@ void DevFrameQueue::push_back(
   const std::function<void()>& release_func
 ) {
   std::unique_lock<std::mutex> lock(mutex_);
+  D("DevFrameQueue::push_back() frame.frame_size %d", (int)frame.frame_size);
   while (size_ >= max_size_) drop_front_locked();
   size_t back = ((front_ + size_) % max_size_);
   queue_[back] = new DevFrame(profile, frame, release_func);
@@ -208,7 +209,7 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   front_ = ((front + 1) % max_size_);
   --size_;
   cv::UMatData* data = f;
-  // D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
+  D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
   cv::Mat m(0, 0, CV_8UC1);
   m.allocator = &single_alloc;
   m.cols = f->profile_.width;
@@ -217,6 +218,7 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   m.dims = 2;
   m.step.p[0] = (m.cols * sizeof(uint8_t));
   m.step.p[1] = sizeof(uint8_t);
+  D("frame data %p data+size %p", m.data, m.data+f->frame_.frame_size);
   // Leap Motion devices pretend to be giving frames in YUY2 format
   // (4 bytes for 2 pixels), but it's really 8bit grayscale with
   // each row containing both the L and R rows.
@@ -233,6 +235,7 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
       std::vector<uchar> halfrow(halfcols);
       uchar* src = m.data;
       for (int row = 0; row < m.rows; ++row) {
+        D("halfcols %d m.rows %d row %d src %p", halfcols, m.rows, row, src);
         uchar* final_R = (src + halfcols);
         uchar* srclim = (src + m.cols);
         uchar* dst_L = src;
@@ -251,10 +254,6 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
       break;
   }
   m.rows = f->profile_.height;
-  if ((f->profile_.format == fourcc_YUY2) &&
-      (f->frame_.frame_size == 2*m.cols*m.rows)) {
-    // m.cols *= 2;
-  }
   m.step = m.cols * sizeof(uint8_t);
   m.u = data;
   data->data = m.data;

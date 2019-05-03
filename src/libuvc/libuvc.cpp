@@ -546,6 +546,9 @@ namespace librealuvc
                     case RS2_OPTION_AUTO_EXPOSURE_PRIORITY:
                         unit = _input_terminal;
                         return UVC_CT_AE_PRIORITY_CONTROL;
+                    case RS2_OPTION_ZOOM_ABSOLUTE:
+                        unit = _input_terminal;
+                        return UVC_CT_ZOOM_ABSOLUTE_CONTROL;
                     default:
                         throw linux_backend_exception(to_string() << "invalid option : " << option);
                 }
