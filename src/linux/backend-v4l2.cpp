@@ -963,9 +963,12 @@ namespace librealuvc
                                     std::stringstream s;
                                     s << "Incomplete video frame detected!\nSize " << buf.bytesused
                                       << " out of " << buffer->get_full_length() << " bytes (" << percentage << "%)";
+                                    LOG_WARNING(s.str());
+#if 0
                                     librealuvc::notification n = { RS2_NOTIFICATION_CATEGORY_FRAME_CORRUPTED, 0, RS2_LOG_SEVERITY_WARN, s.str()};
 
                                     _error_handler(n);
+#endif
                                 }
                                 else
                                 {
@@ -1011,9 +1014,11 @@ namespace librealuvc
                 else // (val==0)
                 {
                     LOG_WARNING("Frames didn't arrived within 5 seconds");
+#if 0
                         librealuvc::notification n = {RS2_NOTIFICATION_CATEGORY_FRAMES_TIMEOUT, 0, RS2_LOG_SEVERITY_WARN,  "Frames didn't arrived within 5 seconds"};
 
                         _error_handler(n);
+#endif
                 }
             }
         }
@@ -1317,6 +1322,7 @@ namespace librealuvc
             case RS2_OPTION_ENABLE_AUTO_WHITE_BALANCE: return V4L2_CID_AUTO_WHITE_BALANCE;
             case RS2_OPTION_POWER_LINE_FREQUENCY : return V4L2_CID_POWER_LINE_FREQUENCY;
             case RS2_OPTION_AUTO_EXPOSURE_PRIORITY: return V4L2_CID_EXPOSURE_AUTO_PRIORITY;
+            case RS2_OPTION_ZOOM_ABSOLUTE: return V4L2_CID_ZOOM_ABSOLUTE;
             default: throw linux_backend_exception(to_string() << "no v4l2 cid for option " << option);
             }
         }
@@ -1333,10 +1339,11 @@ namespace librealuvc
             catch (const std::exception& ex)
             {
                 LOG_ERROR(ex.what());
-
+#if 0
                 librealuvc::notification n = {RS2_NOTIFICATION_CATEGORY_UNKNOWN_ERROR, 0, RS2_LOG_SEVERITY_ERROR, ex.what()};
 
                 _error_handler(n);
+#endif
             }
         }
 
@@ -1655,7 +1662,9 @@ namespace librealuvc
                             std::stringstream s;
                             s << "Invalid metadata payload, size " << buf.bytesused;
                             LOG_INFO(s.str());
+#if 0
                             _error_handler({ RS2_NOTIFICATION_CATEGORY_FRAME_CORRUPTED, 0, RS2_LOG_SEVERITY_WARN, s.str()});
+#endif
                         }
                     }
                 }
@@ -1671,7 +1680,7 @@ namespace librealuvc
             auto v4l_uvc_dev = (!info.has_metadata_node) ? std::make_shared<v4l_uvc_device>(info) :
                                                            std::make_shared<v4l_uvc_meta_device>(info);
 
-            return std::make_shared<platform::retry_controls_work_around>(v4l_uvc_dev);
+            return std::make_shared<uvc_device_with_retry>(v4l_uvc_dev);
         }
 
         std::vector<uvc_device_info> v4l_backend::query_uvc_devices() const
@@ -1729,7 +1738,7 @@ namespace librealuvc
 
         std::shared_ptr<device_watcher> v4l_backend::create_device_watcher() const
         {
-            return std::make_shared<polling_device_watcher>(this);
+            return nullptr /*std::make_shared<polling_device_watcher>(this)*/;
         }
 
         std::shared_ptr<backend> create_backend()

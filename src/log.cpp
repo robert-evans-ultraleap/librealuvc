@@ -44,13 +44,12 @@ class single_logger {
     }
   }
   
-  void log_msg(ru_severity sev, const std::stringstream& ss) {
+  void log_msg(ru_severity sev, const std::string& msg) {
     std::lock_guard<std::mutex> lock(mutex_);
     bool want_console = (sev >= sev_console_);
     bool want_file = ((sev >= sev_file_) && log_);
     if (!want_console && !want_file) return;
     auto sev_str = sev2str(sev);
-    auto msg = ss.str();
     if (want_console) {
       printf("%s: librealuvc: ", sev_str);
       fwrite(msg.data(), 1, msg.length(), stdout);
@@ -79,8 +78,8 @@ void log_to_file(ru_severity min_sev, const char* file_path) {
   get_single_logger()->log_to_file(min_sev, file_path);
 }
 
-void log_msg(ru_severity sev, const std::stringstream& ss) {
-  get_single_logger()->log_msg(sev, ss);
+void log_msg(ru_severity sev, const std::string& msg) {
+  get_single_logger()->log_msg(sev, msg);
 }
 
 }

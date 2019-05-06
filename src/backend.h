@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>       // For shared_ptr
+#include <set>
 
 const uint16_t MAX_RETRIES                = 100;
 const uint16_t VID_INTEL_CAMERA           = 0x8086;

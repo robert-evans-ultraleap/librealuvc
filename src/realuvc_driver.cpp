@@ -166,9 +166,9 @@ void DevFrameQueue::push_back(
 
 void print_mat(const char* what, const cv::Mat& mat) {
   printf("print_mat(%s):\n", what);
-  printf("  allocator %p (DevMatAllocator %p)\n", mat.allocator, &single_alloc);
+  printf("  allocator %p (DevMatAllocator %p)\n", (void*)mat.allocator, (void*)&single_alloc);
   printf("  cols %d\n", mat.cols);
-  printf("  data %p\n", mat.data);
+  printf("  data %p\n", (void*)mat.data);
   printf("  dims %d\n", mat.dims);
   printf("  flags 0x%08x\n", mat.flags);
   printf("  rows %d\n", mat.rows);
@@ -176,23 +176,23 @@ void print_mat(const char* what, const cv::Mat& mat) {
     printf("  size[%d] %ld\n", j, (long)mat.size[j]);
   }
   printf("  step %ld\n", (long)mat.step);
-  printf("  umatdata %p\n", mat.u);
+  printf("  umatdata %p\n", (void*)mat.u);
   fflush(stdout);
   auto u = mat.u;
   if (!u) return;
   printf("    allocatorFlags_ 0x%08x\n", u->allocatorFlags_);
-  printf("    currAllocator %p\n", u->currAllocator);
-  printf("    data %p\n", u->data);
+  printf("    currAllocator %p\n", (void*)u->currAllocator);
+  printf("    data %p\n", (void*)u->data);
   printf("    flags 0x%08x\n", (int)u->flags);
-  printf("    handle %p\n", u->handle);
+  printf("    handle %p\n", (void*)u->handle);
   printf("    mapcount %d\n", u->mapcount);
-  printf("    origdata %p\n", u->origdata);
-  printf("    origUMatData %p\n", u->originalUMatData);
-  printf("    prevAllocator %p\n", u->prevAllocator);
+  printf("    origdata %p\n", (void*)u->origdata);
+  printf("    origUMatData %p\n", (void*)u->originalUMatData);
+  printf("    prevAllocator %p\n", (void*)u->prevAllocator);
   printf("    refcount %d\n", u->refcount);
   printf("    size %ld\n", (long)u->size);
   printf("    urefcount %d\n", u->urefcount);
-  printf("    userdata %p\n", u->userdata);
+  printf("    userdata %p\n", (void*)u->userdata);
   printf("\n");
   fflush(stdout);
 }
@@ -209,7 +209,7 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   front_ = ((front + 1) % max_size_);
   --size_;
   cv::UMatData* data = f;
-  D("pop_front DevFrame %p frame_size %d", f, (int)f->frame_.frame_size);
+  D("pop_front DevFrame %p frame_size %d", (void*)f, (int)f->frame_.frame_size);
   cv::Mat m(0, 0, CV_8UC1);
   m.allocator = &single_alloc;
   m.cols = f->profile_.width;

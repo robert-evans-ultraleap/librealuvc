@@ -36,6 +36,10 @@ typedef double ru_time_t; // Timestamp in milliseconds
 
 typedef ru_time_t rs2_time_t;
 
+#ifdef linux 
+typedef uint8_t byte;
+#endif
+
 struct frame_object {
   size_t      frame_size;
   uint8_t     metadata_size;

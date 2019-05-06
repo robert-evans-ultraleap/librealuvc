@@ -7,6 +7,9 @@
 //
 #include <librealuvc/realuvc.h>
 #include <opencv2/core.hpp>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
 
 namespace librealuvc {
 
