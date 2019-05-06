@@ -394,7 +394,7 @@ namespace librealuvc
             std::vector<hid_device_info> query_hid_devices() const override;
 
             std::shared_ptr<time_service> create_time_service() const override;
-            std::shared_ptr<device_watcher> create_device_watcher() const;
+            std::shared_ptr<device_watcher> create_device_watcher() const override;
         };
     }
 }

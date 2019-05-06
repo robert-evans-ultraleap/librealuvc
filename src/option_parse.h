@@ -69,7 +69,7 @@ class OptionParse {
     if (!have_value(tmp)) return false;
     val = tmp;
     return true;
-  };
+  }
 
   bool have_option(const char* short_name, const char* long_name);
 

@@ -7,6 +7,7 @@
 //
 #include "option_parse.h"
 #include <cstdio>
+#include <cstring>
 
 namespace leap {
 
@@ -85,7 +86,7 @@ bool OptionParse::have_value(bool& val) {
     return advance();
   }
   return false;
-};
+}
 
 template<> 
 bool OptionParse::have_value(double& val) {
@@ -93,7 +94,7 @@ bool OptionParse::have_value(double& val) {
   char* endp = pos_;
   val = strtod(pos_, &endp);
   return ((endp > pos_) && (*endp == 0) && advance());
-};
+}
 
 template<> 
 bool OptionParse::have_value(int& val) {
@@ -101,14 +102,14 @@ bool OptionParse::have_value(int& val) {
   char* endp = pos_;
   val = (int)strtol(pos_, &endp, 0);
   return ((endp > pos_) && (*endp == 0) && advance());
-};
+}
 
 template<> 
 bool OptionParse::have_value(string& val) {
   if (!pos_) return false;
   val = std::string(pos_);
   return ((val.length() > 0) && advance());
-};
+}
 
 bool OptionParse::have_end() {
   return (idx_ >= argc_);

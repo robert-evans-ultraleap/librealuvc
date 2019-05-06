@@ -19,19 +19,23 @@ enum ru_severity {
   RU_SEVERITY_COUNT 
 };
 
+constexpr ru_severity RS2_LOG_SEVERITY_WARN  = RU_SEVERITY_WARNING;
+constexpr ru_severity RS2_LOG_SEVERITY_ERROR = RU_SEVERITY_ERROR;
+
 typedef ru_severity rs2_log_severity;
 
 void log_to_console(ru_severity min_sev);
 
 void log_to_file(ru_severity min_sev, const char* file);
 
-void log_msg(ru_severity sev, const std::stringstream& ss);
+void log_msg(ru_severity sev, const std::string& ss);
 
-#define LOG_WITH_SEVERITY(sev, ...) { \
-  std::stringstream ss; \
-  ss << __VA_ARGS__; \
-  log_msg(sev, ss); \
-}
+#define LOG_WITH_SEVERITY(sev, ...) \
+  do { \
+    std::stringstream ss; \
+    ss << __VA_ARGS__; \
+    log_msg(sev, ss.str()); \
+  } while (false)
 
 #define LOG_DEBUG(...)   LOG_WITH_SEVERITY(RU_SEVERITY_DEBUG,   __VA_ARGS__)
 #define LOG_INFO(...)    LOG_WITH_SEVERITY(RU_SEVERITY_INFO,    __VA_ARGS__)
