@@ -1322,6 +1322,7 @@ namespace librealuvc
             case RS2_OPTION_ENABLE_AUTO_WHITE_BALANCE: return V4L2_CID_AUTO_WHITE_BALANCE;
             case RS2_OPTION_POWER_LINE_FREQUENCY : return V4L2_CID_POWER_LINE_FREQUENCY;
             case RS2_OPTION_AUTO_EXPOSURE_PRIORITY: return V4L2_CID_EXPOSURE_AUTO_PRIORITY;
+            case RS2_OPTION_ZOOM_ABSOLUTE: return V4L2_CID_ZOOM_ABSOLUTE;
             default: throw linux_backend_exception(to_string() << "no v4l2 cid for option " << option);
             }
         }
