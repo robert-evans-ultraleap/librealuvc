@@ -38,6 +38,60 @@
 #include "libuvc.h"
 #include "libuvc_internal.h"
 
+uvc_frame::uvc_frame(size_t data_size, size_t meta_size) :
+  weak_pool(),
+  data_max(0),
+  data(nullptr),
+  data_bytes(0),
+  metadata_max(0),
+  metadata(nullptr),
+  metadata_bytes(0),
+  source(nullptr),
+  library_owns_data(0)
+{
+  if (data_size > 0) resize_data(data_size);
+  if (meta_size > 0) resize_metadata(meta_size);
+  data_bytes = data_size;
+  metadata_bytes = meta_size;
+}
+
+uvc_frame::~uvc_frame() {
+  if (data && !library_owns_data) free(data);
+  if (metadata) free(metadata);
+}
+
+void uvc_frame::resize_data(size_t data_size) {
+  if (data_max < data_size) {
+    data_max = ((data_size + 0x3f) & ~0x3f);
+    void* p = (void*)malloc(data_max);
+    if (data_bytes > 0) memcpy(p, data, data_bytes);
+    if (data && !library_owns_data) free(data);
+    data = p;
+    library_owns_data = 0;
+  }
+  data_bytes = data_size;
+}
+
+void uvc_frame::resize_metadata(size_t meta_size) {
+  if (metadata_max < meta_size) {
+    metadata_max = ((meta_size + 0x3f) & ~0x3f);
+    void* p = (void*)malloc(metadata_max);
+    if (metadata_bytes > 0) memcpy(p, metadata, metadata_bytes);
+    if (metadata) free(metadata);
+    metadata = p;
+  }
+  metadata_bytes = meta_size;
+}
+
+void uvc_frame::release() {
+  auto pool = weak_pool.lock();
+  if (pool) {
+    pool->release_frame(this);
+  } else {
+    delete this;
+  }
+}
+
 /** @internal */
 uvc_error_t uvc_ensure_frame_size(uvc_frame_t *frame, size_t need_bytes) {
   if (frame->library_owns_data) {
@@ -55,6 +109,7 @@ uvc_error_t uvc_ensure_frame_size(uvc_frame_t *frame, size_t need_bytes) {
   }
 }
 
+#if 0
 /** @brief Allocate a frame structure
  * @ingroup frame
  *
@@ -83,18 +138,21 @@ uvc_frame_t *uvc_allocate_frame(size_t data_bytes) {
 
   return frame;
 }
+#endif
 
 /** @brief Free a frame structure
  * @ingroup frame
  *
  * @param frame Frame to destroy
  */
+#if 0
 void uvc_free_frame(uvc_frame_t *frame) {
   if (frame->data_bytes > 0 && frame->library_owns_data)
     free(frame->data);
 
   free(frame);
 }
+#endif
 
 static inline unsigned char sat(int i) {
   return (unsigned char)( i >= 255 ? 255 : (i < 0 ? 0 : i));
@@ -107,9 +165,8 @@ static inline unsigned char sat(int i) {
  * @param out Duplicate frame
  */
 uvc_error_t uvc_duplicate_frame(uvc_frame_t *in, uvc_frame_t *out) {
-  if (uvc_ensure_frame_size(out, in->data_bytes) < 0)
-    return UVC_ERROR_NO_MEM;
-
+  out->data_bytes = 0;
+  out->resize_data(in->data_bytes);
   out->width = in->width;
   out->height = in->height;
   out->frame_format = in->frame_format;

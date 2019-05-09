@@ -13,7 +13,7 @@
 #include <mutex>
 #include <thread>
 
-#if 1
+#if 0
 #define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #else
 #define D(...) { }
@@ -408,7 +408,7 @@ bool VideoCapture::set(int prop_id, double val) {
   std::unique_lock<std::mutex> lock(istream->mutex_);
   int32_t ival = (int32_t)val;
   if (prop_id != cv::CAP_PROP_SHARPNESS) {
-    printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
+    //printf("DEBUG: VideoCapture::set(%s, %.2f) ...\n", prop_name(prop_id), val); fflush(stdout);
   }
   if (driver_) {
     // The driver can implement device-specific behavior for some prop_id's

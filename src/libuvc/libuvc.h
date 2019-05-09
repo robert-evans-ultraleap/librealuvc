@@ -2,6 +2,7 @@
 #define LIBUVC_H
 
 #include <functional>
+#include <memory>
 
 #ifdef __cplusplus
 extern "C" {
@@ -426,14 +427,21 @@ typedef struct uvc_device_descriptor {
     const char *product;
 } uvc_device_descriptor_t;
 
+class uvc_frame_pool;
 /** An image frame received from the UVC device
  * @ingroup streaming
  */
-typedef struct uvc_frame {
+class uvc_frame {
+  public:
+    std::weak_ptr<uvc_frame_pool> weak_pool;
+    /** Allocated size of the data buffer */
+    size_t data_max;
     /** Image data for this frame */
     void *data;
     /** Size of image data buffer */
     size_t data_bytes;
+    /** Allocated size of the metadata buffer */
+    size_t metadata_max;    
     /** Metadata for this frame */
     void *metadata;
     /** Size of metadata */
@@ -460,7 +468,23 @@ typedef struct uvc_frame {
      * Set this field to zero if you are supplying the buffer.
      */
     uint8_t library_owns_data;
-} uvc_frame_t;
+
+  private:
+    uvc_frame(const uvc_frame& b) = delete;
+    uvc_frame& operator=(const uvc_frame& b) = delete;
+  
+  public:
+    uvc_frame(size_t data_size, size_t meta_size);
+
+    ~uvc_frame();
+    
+    void resize_data(size_t data_size);
+    void resize_metadata(size_t meta_size);
+    
+    void release();
+};
+
+typedef uvc_frame uvc_frame_t;
 
 /** A callback function to handle incoming assembled UVC frames
  * @ingroup streaming
@@ -778,10 +802,12 @@ const char* uvc_strerror(uvc_error_t err);
 void uvc_print_diag(uvc_device_handle_t *devh, FILE *stream);
 void uvc_print_stream_ctrl(uvc_stream_ctrl_t *ctrl, FILE *stream);
 
+#if 0
 uvc_frame_t *uvc_allocate_frame(size_t data_bytes);
 void uvc_free_frame(uvc_frame_t *frame);
 
 uvc_error_t uvc_duplicate_frame(uvc_frame_t *in, uvc_frame_t *out);
+#endif
 
 uvc_error_t uvc_yuyv2rgb(uvc_frame_t *in, uvc_frame_t *out);
 uvc_error_t uvc_uyvy2rgb(uvc_frame_t *in, uvc_frame_t *out);

@@ -1,7 +1,7 @@
 #include <librealuvc/realuvc_driver.h>
 #include <condition_variable>
 
-#if 1
+#if 0
 #define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #else
 #define D(...) { }
@@ -235,7 +235,6 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
       std::vector<uchar> halfrow(halfcols);
       uchar* src = m.data;
       for (int row = 0; row < m.rows; ++row) {
-        D("halfcols %d m.rows %d row %d src %p", halfcols, m.rows, row, src);
         uchar* final_R = (src + halfcols);
         uchar* srclim = (src + m.cols);
         uchar* dst_L = src;

@@ -331,7 +331,7 @@ namespace librealuvc
             void stream_on(std::function<void(const notification& n)> error_handler) override
             {
                 uvc_error_t res;
-                // loop over each prfile and start streaming.
+                // loop over each profile and start streaming.
                 for (auto i=0; i < _profiles.size(); ++i) {
                     callback_context *context = new callback_context();
                     context->_callback = _callbacks[i];
@@ -774,8 +774,9 @@ namespace librealuvc
                                  frame->data,
                                  frame->metadata };
 
-                callback(profile, fo,
-                          []() mutable {} );
+                callback(profile, fo, 
+                  [=](){ frame->release(); }
+                );
             }
 
           void power_thread() {

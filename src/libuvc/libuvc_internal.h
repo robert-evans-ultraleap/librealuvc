@@ -11,9 +11,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <vector>
 #include <signal.h>
 #include "utlist.h"
 
@@ -96,7 +98,7 @@
     (out) = dl_nth_p; \
   } while (0);
 
-#define UVC_DEBUGGING 1
+//#define UVC_DEBUGGING 1
 
 #ifdef UVC_DEBUGGING
 #include <libgen.h>
@@ -272,7 +274,30 @@ typedef struct uvc_device_info {
 
 #define LIBUVC_XFER_BUF_SIZE	( 16 * 1024 * 1024 )
 
-struct uvc_stream_handle {
+/*
+  librealuvc allows downstream user code to use frame data until it
+  is explicitly released, so we need a frame pool.
+ */
+
+class uvc_frame_pool : public std::enable_shared_from_this<uvc_frame_pool> {
+ private:
+  std::mutex mutex_;
+  std::vector<uvc_frame*> free_frames_;
+  
+  uvc_frame_pool& operator=(const uvc_frame_pool& b) = delete;
+
+ public:
+  uvc_frame_pool();
+  
+  ~uvc_frame_pool();
+  
+  uvc_frame* grab_frame(size_t data_size, size_t meta_size);
+  
+  void release_frame(uvc_frame* f);
+};
+
+class uvc_stream_handle {
+  public:
     struct uvc_device_handle *devh;
     struct uvc_stream_handle *prev, *next;
     struct uvc_streaming_interface *stream_if;
@@ -281,17 +306,24 @@ struct uvc_stream_handle {
     std::atomic<uint8_t> running;
     /** Current control block */
     struct uvc_stream_ctrl cur_ctrl;
+    
+    /** Accumulate current frame into outbuf and metadata */
+    uint8_t* outbuf;
+    size_t got_bytes;
+    size_t metadata_max;
+    uint8_t* metadata_buf;
+    size_t metadata_bytes;
 
     /* listeners may only access hold*, and only when holding a
      * lock on cb_mutex (probably signaled with cb_cond) */
+    std::shared_ptr<uvc_frame_pool> frame_pool;
+    uvc_frame* full_frame;
     uint8_t fid;
-    uint32_t seq, hold_seq;
-    uint32_t pts, hold_pts;
-    uint32_t last_scr, hold_last_scr;
-    uint8_t *metadata_buf;
-    size_t metadata_bytes,metadata_size;
-    size_t got_bytes, hold_bytes;
-    uint8_t *outbuf, *holdbuf;
+    uint32_t seq;
+    uint32_t pts;
+    uint32_t last_scr;
+    
+    //uint8_t *outbuf, *holdbuf;
     std::mutex cb_mutex;
     std::condition_variable cb_cond;
     std::thread cb_thread;
@@ -301,8 +333,23 @@ struct uvc_stream_handle {
     struct libusb_transfer *transfers[LIBUVC_NUM_TRANSFER_BUFS];
     uint8_t *transfer_bufs[LIBUVC_NUM_TRANSFER_BUFS];
     std::condition_variable transfer_cancel[LIBUVC_NUM_TRANSFER_BUFS];
-    struct uvc_frame frame;
     enum uvc_frame_format frame_format;
+
+  public:
+    uvc_stream_handle() :
+        devh(nullptr),
+        prev(nullptr),
+        next(nullptr),
+        stream_if(nullptr),
+        running(0),
+        outbuf(nullptr),
+        got_bytes(0),
+        metadata_max(0),
+        metadata_buf(nullptr),
+        metadata_bytes(0),
+        frame_pool(std::make_shared<uvc_frame_pool>()),
+        full_frame(nullptr) {
+    }
 };
 
 /** Handle on an open UVC device

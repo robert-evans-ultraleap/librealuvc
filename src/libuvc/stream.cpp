@@ -698,27 +698,58 @@ uvc_error_t uvc_probe_stream_ctrl(
   return UVC_SUCCESS;
 }
 
+// uvc_frame_pool methods
+
+uvc_frame_pool::uvc_frame_pool() :
+  mutex_(),
+  free_frames_() {
+}
+
+uvc_frame_pool::~uvc_frame_pool() {
+  for (auto f : free_frames_) delete f;
+}
+
+uvc_frame* uvc_frame_pool::grab_frame(size_t data_size, size_t meta_size) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  auto nfree = free_frames_.size();
+  uvc_frame* f;
+  if (nfree <= 0) {
+    f = new uvc_frame(data_size, meta_size);
+  } else {
+    f = free_frames_[nfree-1];
+    free_frames_.resize(nfree-1);
+    f->resize_data(data_size);
+    f->resize_metadata(meta_size);
+    return f;
+  }
+  f->weak_pool = shared_from_this();
+  return f;
+}
+
+void uvc_frame_pool::release_frame(uvc_frame* f) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  f->data_bytes = 0;
+  f->metadata_bytes = 0;
+  free_frames_.push_back(f);
+}
+
 /** @internal
  * @brief Swap the working buffer with the presented buffer and notify consumers
  */
 void _uvc_swap_buffers(uvc_stream_handle_t *strmh) {
-  uint8_t *tmp_buf;
-  {
-      /* swap the buffers */
-      tmp_buf = strmh->holdbuf;
-      strmh->hold_bytes = strmh->got_bytes;
-      strmh->holdbuf = strmh->outbuf;
-      strmh->outbuf = tmp_buf;
-      strmh->hold_last_scr = strmh->last_scr;
-      strmh->hold_pts = strmh->pts;
-      strmh->hold_seq = strmh->seq;
-  }
+  auto f = strmh->frame_pool->grab_frame(strmh->got_bytes, strmh->metadata_bytes);
+  memcpy(f->data, strmh->outbuf, strmh->got_bytes);
+  memcpy(f->metadata, strmh->metadata_buf, strmh->metadata_bytes);
+  f->sequence = strmh->seq++;
+  auto drop_frame = strmh->full_frame;
+  strmh->full_frame = f;
   strmh->cb_cond.notify_all();
-
-  strmh->seq++;
   strmh->got_bytes = 0;
   strmh->last_scr = 0;
   strmh->pts = 0;
+  if (drop_frame) {
+    strmh->frame_pool->release_frame(drop_frame);
+  }
 }
 
 /** @internal
@@ -769,8 +800,8 @@ void _uvc_process_payload(uvc_stream_handle_t *strmh, uint8_t *payload, size_t p
             return;
         }
 
-        if (header_len <= strmh->metadata_size) {
-            memcpy( strmh->metadata_buf, payload, header_len);
+        if (header_len <= strmh->metadata_max) {
+            memcpy(strmh->metadata_buf, payload, header_len);
             strmh->metadata_bytes = header_len;
         }
 
@@ -1044,7 +1075,6 @@ uvc_error_t uvc_stream_open_ctrl(uvc_device_handle_t *devh, uvc_stream_handle_t 
   }
   strmh->devh = devh;
   strmh->stream_if = stream_if;
-  strmh->frame.library_owns_data = 1;
 
   ret = uvc_claim_if(strmh->devh, strmh->stream_if->bInterfaceNumber);
   if (ret != UVC_SUCCESS)
@@ -1054,14 +1084,12 @@ uvc_error_t uvc_stream_open_ctrl(uvc_device_handle_t *devh, uvc_stream_handle_t 
   if (ret != UVC_SUCCESS)
     goto fail;
 
-    // Set up the streaming status and data space
-    strmh->running = 0;
-    /** @todo take only what we need */
-    strmh->outbuf = (uint8_t *)malloc( LIBUVC_XFER_BUF_SIZE );
-    strmh->holdbuf = (uint8_t *)malloc( LIBUVC_XFER_BUF_SIZE );
-
-    strmh->metadata_buf = (uint8_t *)malloc( 2048 );
-    strmh->metadata_size = 2048;
+ // Set up the streaming status and data space
+ strmh->running = 0;
+  /** @todo take only what we need */
+  strmh->outbuf = (uint8_t *)malloc(LIBUVC_XFER_BUF_SIZE);
+  strmh->metadata_max = 2048;
+  strmh->metadata_buf = (uint8_t *)malloc(strmh->metadata_max);
 
   DL_APPEND(devh->streams, strmh);
 
@@ -1202,30 +1230,22 @@ uvc_error_t uvc_stream_start_iso(
  */
 void *_uvc_user_caller(void *arg) {
   uvc_stream_handle_t *strmh = (uvc_stream_handle_t *) arg;
+  uvc_frame* frame = nullptr;
 
-  uint32_t last_seq = 0;
-
-  do {
-
-      {
-          std::unique_lock<std::mutex> lock(strmh->cb_mutex);
-
-          while (strmh->running && last_seq == strmh->hold_seq) {
-              strmh->cb_cond.wait(lock);
-          }
-
-          if (!strmh->running) {
-              break;
-          }
-
-          last_seq = strmh->hold_seq;
-          _uvc_populate_frame(strmh);
+  for (;;) {
+    {
+      std::unique_lock<std::mutex> lock(strmh->cb_mutex);
+      for (;;) {
+        if (!strmh->running) return nullptr;
+        if (strmh->full_frame) break;
+        strmh->cb_cond.wait(lock);
       }
-
-    strmh->user_cb(&strmh->frame, strmh->user_ptr);
-  } while(1);
-
-  return NULL; // return value ignored
+      frame = strmh->full_frame;
+      strmh->full_frame = nullptr;
+    }
+    strmh->user_cb(frame, strmh->user_ptr);
+  }
+  return nullptr; // return value ignored
 }
 
 /** @internal
@@ -1234,7 +1254,7 @@ void *_uvc_user_caller(void *arg) {
  */
 void _uvc_populate_frame(uvc_stream_handle_t *strmh) {
   size_t alloc_size = strmh->cur_ctrl.dwMaxVideoFrameSize;
-  uvc_frame_t *frame = &strmh->frame;
+  uvc_frame_t *frame = strmh->full_frame;
   uvc_frame_desc_t *frame_desc;
 
   /** @todo this stuff that hits the main config cache should really happen
@@ -1261,26 +1281,8 @@ void _uvc_populate_frame(uvc_stream_handle_t *strmh) {
     frame->step = 0;
     break;
   }
-
-  frame->sequence = strmh->hold_seq;
   /** @todo set the frame time */
   // frame->capture_time
-
-  /* copy the image data from the hold buffer to the frame (unnecessary extra buf?) */
-  if (frame->data_bytes < strmh->hold_bytes) {
-    frame->data = realloc(frame->data, strmh->hold_bytes);
-  }
-  frame->data_bytes = strmh->hold_bytes;
-  memcpy(frame->data, strmh->holdbuf, frame->data_bytes);
-
-    /* copy the header data from the buffer to the frame */
-
-    if (frame->metadata_bytes < strmh->metadata_bytes) {
-        frame->metadata = (uint8_t *)realloc(frame->metadata, strmh->metadata_bytes);
-    }
-
-    frame->metadata_bytes = strmh->metadata_bytes;
-    memcpy(frame->metadata, strmh->metadata_buf, frame->metadata_bytes);
 }
 
 /** Poll for a frame
@@ -1298,6 +1300,12 @@ uvc_error_t uvc_stream_get_frame(uvc_stream_handle_t *strmh,
   struct timespec ts;
   struct timeval tv;
 
+  auto old_frame = *frame;
+  if (old_frame) {
+    strmh->frame_pool->release_frame(old_frame);
+    *frame = nullptr;
+  }
+
   if (!strmh->running)
     return UVC_ERROR_INVALID_PARAM;
 
@@ -1306,13 +1314,13 @@ uvc_error_t uvc_stream_get_frame(uvc_stream_handle_t *strmh,
 
   {
       std::unique_lock<std::mutex> lock(strmh->cb_mutex);
-
-      if (strmh->last_polled_seq < strmh->hold_seq) {
-          _uvc_populate_frame(strmh);
-          *frame = &strmh->frame;
-          strmh->last_polled_seq = strmh->hold_seq;
-      }
-      else if (timeout_us != -1) {
+      
+      if (!strmh->running) {
+        return UVC_ERROR_INVALID_PARAM;
+      } else if (strmh->full_frame) {
+        *frame = strmh->full_frame;
+        strmh->full_frame = nullptr;
+      } else if (timeout_us != -1) {
           if (timeout_us == 0) {
               strmh->cb_cond.wait(lock);
           }
@@ -1350,29 +1358,20 @@ uvc_error_t uvc_stream_get_frame(uvc_stream_handle_t *strmh,
               }
               catch (...)
               {
-                  *frame = NULL;
                   return UVC_ERROR_OTHER;
               }
 
               //TODO: How should we handle EINVAL?
               switch (err) {
                   case std::cv_status::timeout:
-                      *frame = NULL;
                       return UVC_ERROR_TIMEOUT;
               }
           }
 
-          if (strmh->last_polled_seq < strmh->hold_seq) {
-              _uvc_populate_frame(strmh);
-              *frame = &strmh->frame;
-              strmh->last_polled_seq = strmh->hold_seq;
+          if (strmh->full_frame) {
+              *frame = strmh->full_frame;
+              strmh->full_frame = nullptr;
           }
-          else {
-              *frame = NULL;
-          }
-      }
-      else {
-          *frame = NULL;
       }
 
   }
@@ -1460,16 +1459,20 @@ void uvc_stream_close(uvc_stream_handle_t *strmh) {
     uvc_stream_stop(strmh);
 
   uvc_release_if(strmh->devh, strmh->stream_if->bInterfaceNumber);
-
-  if (strmh->frame.data)
-    free(strmh->frame.data);
-
-    if (strmh->frame.metadata)
-        free(strmh->frame.metadata);
-
+  
+  if (strmh->full_frame) {
+    auto f = strmh->full_frame;
+    strmh->full_frame = nullptr;
+    delete f;
+  }
+  if (strmh->outbuf) {
     free(strmh->outbuf);
-    free(strmh->holdbuf);
+    strmh->outbuf = nullptr;
+  }
+  if (strmh->metadata_buf) {
     free(strmh->metadata_buf);
+    strmh->metadata_buf = nullptr;
+  }
 
   DL_DELETE(strmh->devh->streams, strmh);
   delete strmh;
