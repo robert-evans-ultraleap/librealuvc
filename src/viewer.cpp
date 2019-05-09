@@ -18,7 +18,7 @@
 #define D(...) { }
 #endif
 
-#define VERSION "1.0.3 [2019-05-01]"
+#define VERSION "1.0.4 [2019-05-09]"
 
 using namespace librealuvc;
 using std::shared_ptr;

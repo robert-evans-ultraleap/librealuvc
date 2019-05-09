@@ -81,7 +81,7 @@ int do_stuff() {
   bool ok;
   int camera_id = -1;
   librealuvc::VideoCapture cap;
-  for (int id = 0; id < 2; ++id) {
+  for (int id = 0; id < 8; ++id) {
     ok = cap.open(id);
     if (ok) {
       D("camera_id %d vendor 0x%04x product 0x%04x", 
