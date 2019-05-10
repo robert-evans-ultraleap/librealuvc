@@ -65,4 +65,14 @@ target_link_libraries(
         ${OpenCV_LIBS}
 )
 
+add_library(
+    leaprealuvc
+       "${CMAKE_CURRENT_LIST_DIR}/leaprealuvc/leaprealuvc.h"
+       "${CMAKE_CURRENT_LIST_DIR}/leaprealuvc/leaprealuvc.cpp"
+)
 
+target_link_libraries(
+    leaprealuvc
+        ${LRS_TARGET}
+        ${OpenCV_LIBS}
+)
