@@ -53,11 +53,13 @@ class single_logger {
     if (want_console) {
       printf("%s: librealuvc: ", sev_str);
       fwrite(msg.data(), 1, msg.length(), stdout);
+      fputc('\n', stdout);
       fflush(stdout);
     }
     if (want_file) {
       fprintf(log_, "%s: librealuvc: ", sev_str);
       fwrite(msg.data(), 1, msg.length(), log_);
+      fputc('\n', stdout);
       fflush(log_);
     }
   }

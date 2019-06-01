@@ -12,4 +12,4 @@ namespace librealuvc {
 LIBREALUVC_EXPORT void import_driver_peripheral();
 LIBREALUVC_EXPORT void import_driver_rigel();
 
-};
+}

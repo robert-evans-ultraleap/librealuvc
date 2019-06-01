@@ -125,17 +125,35 @@ LIBREALUVC_EXPORT void register_property_driver(uint16_t vid, uint16_t pid, Prop
   table.map_[table.pack_id(vid, pid)] = maker;
 }
 
+OpaqueCalibration::OpaqueCalibration(
+  const string& format_name,
+  int major,
+  int minor,
+  int patch,
+  const vector<uint8_t>& data
+) :
+  format_name_(format_name),
+  version_major_(major),
+  version_minor_(minor),
+  version_patch_(patch),
+  data_(data) {
+}
+
 class VideoStream : public IVideoStream {
  public:
   std::mutex mutex_;
+  DevFrameFixup fixup_;
   stream_profile profile_;
   bool is_streaming_;
   DevFrameQueue queue_;
+  ru_time_t frame_time_;
   
  public:
   VideoStream(DevFrameFixup fixup, int max_size = 1) :
+    fixup_(fixup),
     is_streaming_(false),
-    queue_(fixup, max_size) {
+    queue_(fixup, max_size),
+    frame_time_(0.0) {
     profile_.width = 640;
     profile_.height = 480;
     profile_.fps = 30;
@@ -211,8 +229,10 @@ double VideoCapture::get(int prop_id) const {
       return (double)istream->profile_.fps;
     case cv::CAP_PROP_FRAME_HEIGHT:
       return (double)istream->profile_.height;
-    case cv::CAP_PROP_FRAME_WIDTH:
-      return (double)istream->profile_.width;
+    case cv::CAP_PROP_FRAME_WIDTH: {
+      int pixel_mul = ((istream->fixup_ == FIXUP_NORMAL) ? 1 : 2); // 8bit pixels
+      return (double)(istream->profile_.width * pixel_mul);
+    }
     case cv::CAP_PROP_GAIN:
       return get_pu(realuvc_, RU_OPTION_GAIN);
     case cv::CAP_PROP_GAMMA:
@@ -225,6 +245,7 @@ double VideoCapture::get(int prop_id) const {
       return get_pu(realuvc_, RU_OPTION_ZOOM_ABSOLUTE);
     // properties we will silently ignore
     case cv::CAP_PROP_POS_MSEC:
+      return (istream ? istream->frame_time_ : 0.0);
     case cv::CAP_PROP_POS_FRAMES:
     case cv::CAP_PROP_POS_AVI_RATIO:
     case cv::CAP_PROP_FRAME_COUNT:
@@ -281,12 +302,7 @@ bool VideoCapture::open(int index) {
   // Now we should be able to access extension units
   driver_ = driver_table.make_driver(vendor_id_, product_id_, realuvc_);
   // Kludge for the weird frame formats returned by Leap Peripheral/Rigel
-  DevFrameFixup fixup = FIXUP_NORMAL;
-  if ((vendor_id_ == 0xf182) && (product_id_ == 0x0003)) { // Leap Peripheral
-    fixup = FIXUP_GRAY8_PIX_L_PIX_R;
-  } else if( (vendor_id_ == 0x2936) && (product_id_ == 0x1202)) { // Leap Rigel
-    fixup = FIXUP_GRAY8_ROW_L_ROW_R;
-  }
+  DevFrameFixup fixup = (driver_ ? driver_->get_frame_fixup() : FIXUP_NORMAL);
   istream_ = std::make_shared<VideoStream>(fixup);
   return true;
 }
@@ -358,7 +374,7 @@ bool VideoCapture::read(cv::OutputArray image) {
     if (!istream->is_streaming_) return false;
   } // don't hold the mutex while possibly waiting for frame
   cv::Mat tmp;
-  istream->queue_.pop_front(tmp); // wait for a frame if necessary
+  istream->queue_.pop_front(istream->frame_time_, tmp); // wait for a frame if necessary
   if (image.needed()) {
     // OutputArray::assign() will not copy unless it needs to
     image.assign(tmp);
@@ -367,7 +383,6 @@ bool VideoCapture::read(cv::OutputArray image) {
     printf("EXCEPTION: VideoCapture::read %s\n", e.what());
     throw;
   }
-
   return true;
 }
 
@@ -436,9 +451,11 @@ bool VideoCapture::set(int prop_id, double val) {
     case cv::CAP_PROP_FRAME_HEIGHT:
       istream->profile_.height = ival;
       return true;
-    case cv::CAP_PROP_FRAME_WIDTH:
-      istream->profile_.width = ival;
+    case cv::CAP_PROP_FRAME_WIDTH: {
+      int pixel_mul = ((istream->fixup_ == FIXUP_NORMAL) ? 1 : 2); // 8bit pixels
+      istream->profile_.width = (ival / pixel_mul);
       return true;
+    }
     case cv::CAP_PROP_GAIN:
       ok = realuvc_->set_pu(RU_OPTION_GAIN, ival);
       //printf("DEBUG: set_pu(RU_OPTION_GAIN, %d) -> %s\n", ival, ok ? "true" : "false");
@@ -484,6 +501,13 @@ int VideoCapture::get_vendor_id() const {
 
 int VideoCapture::get_product_id() const {
   return (is_realuvc_ ? product_id_ : 0);
+}
+
+bool VideoCapture::is_stereo_camera() const {
+  if (is_realuvc_ && driver_) {
+    return driver_->is_stereo_camera();
+  }
+  return false;
 }
 
 static double little_endian_to_double(const std::vector<uint8_t>& vec) {
@@ -543,6 +567,10 @@ bool VideoCapture::get_prop_range(int prop_id, double* min_val, double* max_val)
   *max_val = little_endian_to_double(range.max);
   D("get_prop_range() -> true, { %.0f, %.0f }", *min_val, *max_val);
   return true;
+}
+
+shared_ptr<OpaqueCalibration> VideoCapture::get_opaque_calibration() {
+  return (driver_ ? driver_->get_opaque_calibration() : shared_ptr<OpaqueCalibration>());
 }
 
 bool VideoCapture::get_xu(int ctrl, void* data, int len) {

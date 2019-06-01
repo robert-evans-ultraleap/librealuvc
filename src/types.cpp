@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include <librealuvc/realuvc.h>
+#include <librealuvc/ru_uvc.h>
 #include <chrono>
 #include <cstdint>
 #include <sstream>
@@ -12,6 +13,7 @@
 namespace librealuvc {
 
 using std::shared_ptr;
+using std::string;
 using std::vector;
 
 backend_device_group::backend_device_group() { }
@@ -196,20 +198,20 @@ usb_spec uvc_device_with_retry::get_usb_specification() const {
 template<typename T>
 inline string fmt(T val) {
   std::stringstream ss; ss << val; return ss.str();
-};
+}
 
 template<>
-inline string fmt(uint8_t val) { char buf[64]; sprintf(buf, "0x%02x", (int)val); return string(buf); };
+inline string fmt(uint8_t val) { char buf[64]; sprintf(buf, "0x%02x", (int)val); return string(buf); }
 template<>
-inline string fmt(uint16_t val) { char buf[64]; sprintf(buf, "0x%04x", (int)val); return string(buf); };
+inline string fmt(uint16_t val) { char buf[64]; sprintf(buf, "0x%04x", (int)val); return string(buf); }
 template<>
-inline string fmt(uint32_t val) { char buf[64]; sprintf(buf, "0x%08x", (int)val); return string(buf); };
+inline string fmt(uint32_t val) { char buf[64]; sprintf(buf, "0x%08x", (int)val); return string(buf); }
 template<>
 inline string fmt(const string& val) {
   std::stringstream ss;
   ss << '\"' << val << '\"';
   return ss.str();
-};
+}
 
 string stream_profile::to_string() const {
   std::stringstream ss;
