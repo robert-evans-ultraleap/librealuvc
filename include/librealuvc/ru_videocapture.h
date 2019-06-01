@@ -46,6 +46,8 @@ class IPropertyDriver {
  public:
   virtual ~IPropertyDriver() { }
   
+  virtual bool is_stereo_camera() { return false; }
+  
   virtual int get_frame_fixup() { return 0; }
   
   virtual HandlerResult get_prop_range(int prop_id, double* min, double* max) = 0;
@@ -113,6 +115,8 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   
   virtual int get_vendor_id() const;
   virtual int get_product_id() const;
+  
+  virtual bool is_stereo_camera() const;
   
   virtual bool get_prop_range(int prop_id, double* min_val, double* max_val);
   

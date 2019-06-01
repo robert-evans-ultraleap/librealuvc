@@ -53,6 +53,10 @@ class PropertyDriverRigel : public IPropertyDriver {
     }
   }
 
+  bool is_stereo_camera() override {
+    return true;
+  }
+
   int get_frame_fixup() override {
     return 2;
   }

@@ -128,12 +128,14 @@ LIBREALUVC_EXPORT void register_property_driver(uint16_t vid, uint16_t pid, Prop
 class VideoStream : public IVideoStream {
  public:
   std::mutex mutex_;
+  DevFrameFixup fixup_;
   stream_profile profile_;
   bool is_streaming_;
   DevFrameQueue queue_;
   
  public:
   VideoStream(DevFrameFixup fixup, int max_size = 1) :
+    fixup_(fixup),
     is_streaming_(false),
     queue_(fixup, max_size) {
     profile_.width = 640;
@@ -211,8 +213,10 @@ double VideoCapture::get(int prop_id) const {
       return (double)istream->profile_.fps;
     case cv::CAP_PROP_FRAME_HEIGHT:
       return (double)istream->profile_.height;
-    case cv::CAP_PROP_FRAME_WIDTH:
-      return (double)istream->profile_.width;
+    case cv::CAP_PROP_FRAME_WIDTH: {
+      int pixel_mul = ((istream->fixup_ == FIXUP_NORMAL) ? 1 : 2); // 8bit pixels
+      return (double)(istream->profile_.width * pixel_mul);
+    }
     case cv::CAP_PROP_GAIN:
       return get_pu(realuvc_, RU_OPTION_GAIN);
     case cv::CAP_PROP_GAMMA:
@@ -436,9 +440,11 @@ bool VideoCapture::set(int prop_id, double val) {
     case cv::CAP_PROP_FRAME_HEIGHT:
       istream->profile_.height = ival;
       return true;
-    case cv::CAP_PROP_FRAME_WIDTH:
-      istream->profile_.width = ival;
+    case cv::CAP_PROP_FRAME_WIDTH: {
+      int pixel_mul = ((istream->fixup_ == FIXUP_NORMAL) ? 1 : 2); // 8bit pixels
+      istream->profile_.width = (ival / pixel_mul);
       return true;
+    }
     case cv::CAP_PROP_GAIN:
       ok = realuvc_->set_pu(RU_OPTION_GAIN, ival);
       //printf("DEBUG: set_pu(RU_OPTION_GAIN, %d) -> %s\n", ival, ok ? "true" : "false");
@@ -484,6 +490,13 @@ int VideoCapture::get_vendor_id() const {
 
 int VideoCapture::get_product_id() const {
   return (is_realuvc_ ? product_id_ : 0);
+}
+
+bool VideoCapture::is_stereo_camera() const {
+  if (is_realuvc_ && driver_) {
+    return driver_->is_stereo_camera();
+  }
+  return false;
 }
 
 static double little_endian_to_double(const std::vector<uint8_t>& vec) {

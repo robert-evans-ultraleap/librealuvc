@@ -31,6 +31,10 @@ class PropertyDriverPeripheral : public IPropertyDriver {
     hdr_(0),
     leds_(1) {
   }
+  
+  bool is_stereo_camera() override {
+    return true;
+  }
 
   int get_frame_fixup() override {
     return 1;
