@@ -162,6 +162,8 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   
   virtual bool is_stereo_camera() const;
   
+  virtual shared_ptr<OpaqueCalibration> get_opaque_calibration();
+  
   virtual bool get_prop_range(int prop_id, double* min_val, double* max_val);
   
   virtual bool get_xu(int ctrl, void* data, int len);

@@ -125,6 +125,20 @@ LIBREALUVC_EXPORT void register_property_driver(uint16_t vid, uint16_t pid, Prop
   table.map_[table.pack_id(vid, pid)] = maker;
 }
 
+OpaqueCalibration::OpaqueCalibration(
+  const string& format_name,
+  int major,
+  int minor,
+  int patch,
+  const vector<uint8_t>& data
+) :
+  format_name_(format_name),
+  version_major_(major),
+  version_minor_(minor),
+  version_patch_(patch),
+  data_(data) {
+}
+
 class VideoStream : public IVideoStream {
  public:
   std::mutex mutex_;
@@ -551,6 +565,10 @@ bool VideoCapture::get_prop_range(int prop_id, double* min_val, double* max_val)
   *max_val = little_endian_to_double(range.max);
   D("get_prop_range() -> true, { %.0f, %.0f }", *min_val, *max_val);
   return true;
+}
+
+shared_ptr<OpaqueCalibration> VideoCapture::get_opaque_calibration() {
+  return (driver_ ? driver_->get_opaque_calibration() : shared_ptr<OpaqueCalibration>());
 }
 
 bool VideoCapture::get_xu(int ctrl, void* data, int len) {

@@ -28,20 +28,6 @@ backend_device_group::backend_device_group(
   hid_devices(hid_devs) {
 }
 
-OpaqueCalibration::OpaqueCalibration(
-  const string& format_name,
-  int major,
-  int minor,
-  int patch,
-  const vector<uint8_t>& data
-) :
-  format_name_(format_name),
-  version_major_(major),
-  version_minor_(minor),
-  version_patch_(patch),
-  data_(data) {
-}
-
 // stream_profile is declared in <librealuvc/hpp/ru_common.hpp>
 
 bool stream_profile::operator==(const stream_profile& b) const {
