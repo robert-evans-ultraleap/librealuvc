@@ -4,10 +4,10 @@
 #include "drivers.h"
 #include <librealuvc/ru_uvc.h>
 #include <librealuvc/ru_videocapture.h>
-#include <cstdio>
 #include "leap_xu.h"
+#include <cstdio>
 
-#if 0
+#if 1
 #define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
 #else
 #define D(...) { }
@@ -56,11 +56,19 @@ class PropertyDriverRigel : public IPropertyDriver {
   bool is_stereo_camera() override {
     return true;
   }
-
-  int get_frame_fixup() override {
-    return 2;
-  }
   
+  DevFrameFixup get_frame_fixup() override {
+    return FIXUP_GRAY8_ROW_L_ROW_R;
+  }
+
+  shared_ptr<OpaqueCalibration> get_opaque_calibration() override {
+    const size_t kCalibrationDataSize = 156;
+    vector<uint8_t> data(kCalibrationDataSize);
+    bool ok = dev_->get_xu(leap_xu_, LEAP_XU_CALIBRATION_DATA, &data[0], (int)data.size());
+    if (!ok) return nullptr;
+    return std::make_shared<OpaqueCalibration>("LeapStereoCalibration", 1, 0, 0, data);
+  }
+
   HandlerResult get_prop(int prop_id, double* val) override {
     bool ok = true;
     int32_t ival = 0;

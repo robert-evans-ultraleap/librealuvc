@@ -12,11 +12,16 @@
 #include "ru_uvc.h"
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace librealuvc {
 
 using std::shared_ptr;
+using std::string;
 using std::unique_ptr;
+using std::vector;
 
 // Frame data is allocated by lower-level code (e.g. Windows Media Foundation),
 // so cv::Mat's referring to lower-level buffers will have a custom
@@ -33,6 +38,37 @@ class IVideoStream {
   virtual ~IVideoStream() { }
 };
 
+// OpaqueCalibration contains a format name, version numbers,
+// and a vector of bytes which should be interpreted by higher-level
+// code.
+
+class LIBREALUVC_EXPORT OpaqueCalibration {
+ private:
+  string  format_name_;
+  int32_t version_major_;
+  int32_t version_minor_;
+  int32_t version_patch_;
+  vector<uint8_t> data_;
+ 
+ public:
+  OpaqueCalibration(const OpaqueCalibration& b) = default;
+  OpaqueCalibration& operator=(const OpaqueCalibration& b) = default;
+  
+  OpaqueCalibration(
+    const string& format,
+    int32_t major,
+    int32_t minor,
+    int32_t patch,
+    const vector<uint8_t>& data
+  );
+
+  const string& get_format_name() const { return format_name_; }
+  int32_t get_version_major() const { return version_major_; }
+  int32_t get_version_minor() const { return version_minor_; }
+  int32_t get_version_patch() const { return version_patch_; }
+  const vector<uint8_t>& get_data() const { return data_; }
+};
+
 // A librealuvc::VideoCapture may refer to a device-specific
 // IPropertyDriver which may intercept the get/set calls.
 
@@ -42,13 +78,21 @@ enum HandlerResult {
   kHandlerNotDone = 2
 };
 
+enum DevFrameFixup {
+  FIXUP_NORMAL,
+  FIXUP_GRAY8_PIX_L_PIX_R,
+  FIXUP_GRAY8_ROW_L_ROW_R
+};
+
 class IPropertyDriver {
  public:
   virtual ~IPropertyDriver() { }
   
   virtual bool is_stereo_camera() { return false; }
   
-  virtual int get_frame_fixup() { return 0; }
+  virtual DevFrameFixup get_frame_fixup() { return FIXUP_NORMAL; }
+  
+  virtual shared_ptr<OpaqueCalibration> get_opaque_calibration() { return nullptr; }
   
   virtual HandlerResult get_prop_range(int prop_id, double* min, double* max) = 0;
   

@@ -3,6 +3,7 @@
 
 #include "types.h"
 #include <librealuvc/realuvc.h>
+#include <librealuvc/ru_uvc.h>
 #include <chrono>
 #include <cstdint>
 #include <sstream>
@@ -12,6 +13,7 @@
 namespace librealuvc {
 
 using std::shared_ptr;
+using std::string;
 using std::vector;
 
 backend_device_group::backend_device_group() { }
@@ -24,6 +26,20 @@ backend_device_group::backend_device_group(
   uvc_devices(uvc_devs),
   usb_devices(usb_devs),
   hid_devices(hid_devs) {
+}
+
+OpaqueCalibration::OpaqueCalibration(
+  const string& format_name,
+  int major,
+  int minor,
+  int patch,
+  const vector<uint8_t>& data
+) :
+  format_name_(format_name),
+  version_major_(major),
+  version_minor_(minor),
+  version_patch_(patch),
+  data_(data) {
 }
 
 // stream_profile is declared in <librealuvc/hpp/ru_common.hpp>

@@ -4,6 +4,14 @@
 #include "drivers.h"
 #include <librealuvc/ru_uvc.h>
 #include <librealuvc/ru_videocapture.h>
+#include "leap_xu.h"
+#include <cstdio>
+
+#if 1
+#define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
+#else
+#define D(...) { }
+#endif
 
 namespace librealuvc {
 
@@ -23,6 +31,7 @@ static int32_t flag(double val) {
 class PropertyDriverPeripheral : public IPropertyDriver {
  private:
   shared_ptr<uvc_device> dev_;
+  extension_unit leap_xu_;
   double hdr_;
   double leds_;
  public:
@@ -30,14 +39,31 @@ class PropertyDriverPeripheral : public IPropertyDriver {
     dev_(dev),
     hdr_(0),
     leds_(1) {
+    leap_xu_.subdevice = 0;
+    leap_xu_.unit = 1;
+    leap_xu_.node = 4;
+    leap_xu_.id = guid LEAP_XU_GUID;
+    try {
+      dev_->init_xu(leap_xu_);
+    } catch (std::exception& e) {
+      printf("EXCEPTION: init_xu: %s\n", e.what());
+    }
   }
   
   bool is_stereo_camera() override {
     return true;
   }
 
-  int get_frame_fixup() override {
-    return 1;
+  DevFrameFixup get_frame_fixup() override {
+    return FIXUP_GRAY8_PIX_L_PIX_R;
+  }
+
+  shared_ptr<OpaqueCalibration> get_opaque_calibration() override {
+    const size_t kCalibrationDataSize = 156;
+    vector<uint8_t> data(kCalibrationDataSize);
+    bool ok = dev_->get_xu(leap_xu_, LEAP_XU_CALIBRATION_DATA, &data[0], (int)data.size());
+    if (!ok) return nullptr;
+    return std::make_shared<OpaqueCalibration>("LeapStereoCalibration", 1, 0, 0, data);
   }
 
   HandlerResult get_prop(int prop_id, double* val) override {

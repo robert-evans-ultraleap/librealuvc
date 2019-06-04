@@ -285,12 +285,7 @@ bool VideoCapture::open(int index) {
   // Now we should be able to access extension units
   driver_ = driver_table.make_driver(vendor_id_, product_id_, realuvc_);
   // Kludge for the weird frame formats returned by Leap Peripheral/Rigel
-  DevFrameFixup fixup = FIXUP_NORMAL;
-  if ((vendor_id_ == 0xf182) && (product_id_ == 0x0003)) { // Leap Peripheral
-    fixup = FIXUP_GRAY8_PIX_L_PIX_R;
-  } else if( (vendor_id_ == 0x2936) && (product_id_ == 0x1202)) { // Leap Rigel
-    fixup = FIXUP_GRAY8_ROW_L_ROW_R;
-  }
+  DevFrameFixup fixup = (driver_ ? driver_->get_frame_fixup() : FIXUP_NORMAL);
   istream_ = std::make_shared<VideoStream>(fixup);
   return true;
 }

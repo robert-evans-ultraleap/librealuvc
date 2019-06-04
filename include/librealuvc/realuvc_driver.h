@@ -41,12 +41,6 @@ class DevFrame : public cv::UMatData {
   ~DevFrame();
 };
 
-enum DevFrameFixup {
-  FIXUP_NORMAL,
-  FIXUP_GRAY8_PIX_L_PIX_R,
-  FIXUP_GRAY8_ROW_L_ROW_R
-};
-
 class DevFrameQueue {
  private:
   std::mutex mutex_;
