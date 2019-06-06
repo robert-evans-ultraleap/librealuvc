@@ -197,7 +197,7 @@ void print_mat(const char* what, const cv::Mat& mat) {
   fflush(stdout);
 }
   
-void DevFrameQueue::pop_front(cv::Mat& mat) {
+void DevFrameQueue::pop_front(ru_time_t& ts, cv::Mat& mat) {
   std::unique_lock<std::mutex> lock(mutex_);
   while (size_ <= 0) {
     ++num_sleepers_;
@@ -208,6 +208,7 @@ void DevFrameQueue::pop_front(cv::Mat& mat) {
   queue_[front] = nullptr;
   front_ = ((front + 1) % max_size_);
   --size_;
+  ts = f->frame_.backend_time;
   cv::UMatData* data = f;
   D("pop_front DevFrame %p frame_size %d", (void*)f, (int)f->frame_.frame_size);
   cv::Mat m(0, 0, CV_8UC1);

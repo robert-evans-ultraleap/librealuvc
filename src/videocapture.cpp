@@ -146,12 +146,14 @@ class VideoStream : public IVideoStream {
   stream_profile profile_;
   bool is_streaming_;
   DevFrameQueue queue_;
+  ru_time_t frame_time_;
   
  public:
   VideoStream(DevFrameFixup fixup, int max_size = 1) :
     fixup_(fixup),
     is_streaming_(false),
-    queue_(fixup, max_size) {
+    queue_(fixup, max_size),
+    frame_time_(0.0) {
     profile_.width = 640;
     profile_.height = 480;
     profile_.fps = 30;
@@ -243,6 +245,7 @@ double VideoCapture::get(int prop_id) const {
       return get_pu(realuvc_, RU_OPTION_ZOOM_ABSOLUTE);
     // properties we will silently ignore
     case cv::CAP_PROP_POS_MSEC:
+      return (istream ? istream->frame_time_ : 0.0);
     case cv::CAP_PROP_POS_FRAMES:
     case cv::CAP_PROP_POS_AVI_RATIO:
     case cv::CAP_PROP_FRAME_COUNT:
@@ -371,7 +374,7 @@ bool VideoCapture::read(cv::OutputArray image) {
     if (!istream->is_streaming_) return false;
   } // don't hold the mutex while possibly waiting for frame
   cv::Mat tmp;
-  istream->queue_.pop_front(tmp); // wait for a frame if necessary
+  istream->queue_.pop_front(istream->frame_time_, tmp); // wait for a frame if necessary
   if (image.needed()) {
     // OutputArray::assign() will not copy unless it needs to
     image.assign(tmp);
@@ -380,7 +383,6 @@ bool VideoCapture::read(cv::OutputArray image) {
     printf("EXCEPTION: VideoCapture::read %s\n", e.what());
     throw;
   }
-
   return true;
 }
 
