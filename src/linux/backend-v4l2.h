@@ -207,7 +207,10 @@ namespace librealuvc
                         //LOG_DEBUG("Enqueue buf " << _dq_buf.index << " for fd " << _file_desc);
                         if (xioctl(_file_desc, (int)VIDIOC_QBUF, &_dq_buf) < 0)
                         {
-                            LOG_ERROR("xioctl(VIDIOC_QBUF) guard failed");
+                            static int num_fail;
+                            if (++num_fail == 1) {
+                                LOG_ERROR("xioctl(VIDIOC_QBUF) guard failed");
+                            }
                         }
                     }
                 }
