@@ -61,8 +61,15 @@ class PropertyDriverPeripheral : public IPropertyDriver {
   shared_ptr<OpaqueCalibration> get_opaque_calibration() override {
     const size_t kCalibrationDataSize = 156;
     vector<uint8_t> data(kCalibrationDataSize);
-    bool ok = dev_->get_xu(leap_xu_, LEAP_XU_CALIBRATION_DATA, &data[0], (int)data.size());
-    if (!ok) return nullptr;
+    // Use RU_OPTION_SHARPNESS  as property-knocker byte address
+    //     RU_OPTION_SATURATION as property-knocker byte value
+    const int32_t kMemCalibAddr = 100;
+    for (int32_t offset = 0; offset < (int32_t)kCalibrationDataSize; ++offset) {
+      dev_->set_pu(RU_OPTION_SHARPNESS, kMemCalibAddr+offset);
+      int32_t val = 0;
+      dev_->get_pu(RU_OPTION_SATURATION, val);
+      data[offset] = (uint8_t)val;
+    }
     return std::make_shared<OpaqueCalibration>("LeapStereoCalibration", 1, 0, 0, data);
   }
 
