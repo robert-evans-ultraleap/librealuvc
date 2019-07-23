@@ -43,7 +43,7 @@ class PropertyDriverRigel : public IPropertyDriver {
     leds_(0) {
     D("PropertyDriverRigel::ctor() ...");
     leap_xu_.subdevice = 0;
-    leap_xu_.unit = 1;
+    leap_xu_.unit = 224;
     leap_xu_.node = 4;
     leap_xu_.id = guid LEAP_XU_GUID;
     try {
