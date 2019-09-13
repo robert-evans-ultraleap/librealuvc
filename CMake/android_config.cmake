@@ -25,6 +25,5 @@ macro(os_target_config)
         target_link_libraries(${LRS_TARGET} PRIVATE log)
     endif()
 
-    add_dependencies(${LRS_TARGET} libusb)
-    target_link_libraries(${LRS_TARGET} PRIVATE ${LIBUSB1_LIBRARIES})
+    target_link_libraries(${LRS_TARGET} PRIVATE usb)
 endmacro()

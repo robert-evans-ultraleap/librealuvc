@@ -48,18 +48,21 @@ set(LIBUSB_H
     libusb/libusb.h
 )
 
-include_directories(
-  libusb
-  libusb/os
-)
-
 add_library(usb STATIC ${LIBUSB_C} ${LIBUSB_H})
+
+target_include_directories(usb
+  PUBLIC
+    .
+    libusb
+    libusb/os
+)
 
 if(WIN32)
     set_target_properties (usb PROPERTIES
         FOLDER "3rd Party"
     )
-    include_directories(msvc)
+    target_include_directories(usb
+      PUBLIC msvc)
     foreach(flag_var
         CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
         CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO
@@ -72,7 +75,8 @@ if(WIN32)
 endif()
 
 if(ANDROID)
-    include_directories(android)
+  target_include_directories(usb
+    PUBLIC android)
 endif()
 
 if(APPLE)
