@@ -66,7 +66,7 @@ function(target_link_libraries_foreach)
   foreach(target in ${LIBREALUVC_TARGET} ${LIBREALUVC_TARGET}_static ${LIBREALUVC_TARGET}_shared)
     if (TARGET ${target})
       target_link_libraries(${target} ${LIBREALUVC_SCOPE} ${LIBREALUVC_LIBS})
-	endif()
+    endif()
   endforeach()
 endfunction()
 
