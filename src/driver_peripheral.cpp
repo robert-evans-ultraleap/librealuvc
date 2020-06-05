@@ -49,7 +49,15 @@ class PropertyDriverPeripheral : public IPropertyDriver {
       printf("EXCEPTION: init_xu: %s\n", e.what());
     }
   }
-  
+
+  bool get_xu(uint8_t ctrl, uint8_t* data, int len) const override {
+    return dev_->get_xu(leap_xu_, ctrl, data, len);
+  }
+
+  bool set_xu(uint8_t ctrl, const uint8_t* data, int len) override {
+    return dev_->set_xu(leap_xu_, ctrl, data, len);
+  }
+
   bool is_stereo_camera() override {
     return true;
   }

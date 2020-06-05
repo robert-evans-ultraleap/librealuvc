@@ -574,11 +574,17 @@ shared_ptr<OpaqueCalibration> VideoCapture::get_opaque_calibration() {
 }
 
 bool VideoCapture::get_xu(int ctrl, void* data, int len) {
+  std::cout << "custom get xu" << std::endl;
+  if(driver_)
+    return driver_->get_xu(ctrl, data, len);
   return false;
 }
 
 bool VideoCapture::set_xu(int ctrl, const void* data, int len) {
-  return false;
+   std::cout << "custom set xu" << std::endl;
+  if(driver_)
+    return driver->set_xu(ctrl, data, len);
+  return false
 }
 
 } // end librealuvc
