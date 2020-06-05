@@ -99,6 +99,9 @@ class IPropertyDriver {
   virtual HandlerResult get_prop(int prop_id, double* val) = 0;
   
   virtual HandlerResult set_prop(int prop_id, double val) = 0;
+
+  virtual bool get_xu(uint8_t ctrl, uint8_t* data, int len) const = 0;
+  virtual bool set_xu(uint8_t ctrl, const uint8_t* data, int len) = 0;
 };
 
 typedef std::function<
