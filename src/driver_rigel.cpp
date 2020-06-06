@@ -53,14 +53,6 @@ class PropertyDriverRigel : public IPropertyDriver {
     }
   }
 
-  bool get_xu(uint8_t ctrl, uint8_t* data, int len) const override {
-    return dev_->get_xu(leap_xu_, ctrl, data, len);
-  }
-
-  bool set_xu(uint8_t ctrl, const uint8_t* data, int len) override {
-    return dev_->set_xu(leap_xu_, ctrl, data, len);
-  }
-
   bool is_stereo_camera() override {
     return true;
   }
@@ -76,10 +68,6 @@ class PropertyDriverRigel : public IPropertyDriver {
     if (!ok) return nullptr;
     return std::make_shared<OpaqueCalibration>("LeapStereoCalibration", 1, 0, 0, data);
   }
-
-  bool get_xu()
-
-  bool set_xu
 
   HandlerResult get_prop(int prop_id, double* val) override {
     bool ok = true;
