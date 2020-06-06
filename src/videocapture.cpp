@@ -12,6 +12,7 @@
 #include <map>
 #include <mutex>
 #include <thread>
+#include <iostream>
 
 #if 0
 #define D(...) { printf("DEBUG[%s,%d] ", __FILE__, __LINE__); printf(__VA_ARGS__); printf("\n"); fflush(stdout); }
@@ -574,10 +575,12 @@ shared_ptr<OpaqueCalibration> VideoCapture::get_opaque_calibration() {
 }
 
 bool VideoCapture::get_xu(int ctrl, void* data, int len) {
+  std::cout << "Custom get xu" << std::endl;
   return false;
 }
 
 bool VideoCapture::set_xu(int ctrl, const void* data, int len) {
+  std::cout << "Custom set xu" << std::endl;
   return false;
 }
 
