@@ -169,8 +169,8 @@ class LIBREALUVC_EXPORT VideoCapture : public cv::VideoCapture {
   
   virtual bool get_prop_range(int prop_id, double* min_val, double* max_val);
   
-  virtual bool get_xu(int ctrl, void* data, int len);
-  virtual bool set_xu(int ctrl, const void* data, int len);
+  virtual bool get_xu(int ctrl, uint8_t* data, int len);
+  virtual bool set_xu(int ctrl, const uint8_t* data, int len);
   
   inline cv::Mat& get_reusable_image() { return reusable_image_; }
 };

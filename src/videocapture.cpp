@@ -574,14 +574,14 @@ shared_ptr<OpaqueCalibration> VideoCapture::get_opaque_calibration() {
   return (driver_ ? driver_->get_opaque_calibration() : shared_ptr<OpaqueCalibration>());
 }
 
-bool VideoCapture::get_xu(int ctrl, void* data, int len) {
+bool VideoCapture::get_xu(int ctrl, uint8_t* data, int len) {
   std::cout << "custom get xu 2" << std::endl;
   if(driver_)
     return driver_->get_xu(ctrl, data, len);
   return false;
 }
 
-bool VideoCapture::set_xu(int ctrl, const void* data, int len) {
+bool VideoCapture::set_xu(int ctrl, const uint8_t* data, int len) {
   std::cout << "custom set xu 2" << std::endl;
   if(driver_)
     return driver->set_xu(ctrl, data, len);
