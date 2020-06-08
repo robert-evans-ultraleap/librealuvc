@@ -584,7 +584,7 @@ bool VideoCapture::get_xu(int ctrl, uint8_t* data, int len) {
 bool VideoCapture::set_xu(int ctrl, const uint8_t* data, int len) {
   std::cout << "custom set xu 2" << std::endl;
   if(driver_)
-    return driver->set_xu(ctrl, data, len);
+    return driver_->set_xu(ctrl, data, len);
   return false
 }
 
