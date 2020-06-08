@@ -24,6 +24,7 @@
 #include <chrono>
 #include <thread>
 #include <atomic>
+#include <iostream>
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -1061,6 +1062,7 @@ namespace librealuvc
         }
         bool v4l_uvc_device::get_xu(const extension_unit& xu, uint8_t control, uint8_t* data, int size) const
         {
+            std::cout << "v4l getxu " << std::endl;
             uvc_xu_control_query q = {static_cast<uint8_t>(xu.unit), control, UVC_GET_CUR,
                                       static_cast<uint16_t>(size), const_cast<uint8_t *>(data)};
             if(xioctl(_fd, UVCIOC_CTRL_QUERY, &q) < 0)
