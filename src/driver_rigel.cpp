@@ -77,10 +77,6 @@ class PropertyDriverRigel : public IPropertyDriver {
     return std::make_shared<OpaqueCalibration>("LeapStereoCalibration", 1, 0, 0, data);
   }
 
-  bool get_xu()
-
-  bool set_xu
-
   HandlerResult get_prop(int prop_id, double* val) override {
     bool ok = true;
     int32_t ival = 0;
